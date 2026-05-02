@@ -1,0 +1,18 @@
+# Compiled binaries
+/tge
+/tge_cli
+*.exe
+
+# SQLite databases
+*.db
+
+# IDE / editor
+/.idea/
+
+# Agent / local settings
+/.claude/
+/.antygravity/
+
+# Scratch scripts
+/fix_tests.py
+/refactor.py
