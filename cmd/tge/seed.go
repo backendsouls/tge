@@ -67,9 +67,10 @@ func seedCatalog(ctx context.Context, d seedDeps, cat config.Catalog) error {
 		}
 	}
 
-	for _, r := range cat.Realms {
+	for i, r := range cat.Realms {
 		if err := seed("realm "+r.Name, second(d.realms.AddRealm(ctx, progression.RealmConfig{
 			Name:                   r.Name,
+			Tier:                   i + 1, // catalog order defines the realm sequence
 			PowerMultiplier:        r.PowerMultiplier,
 			PowerAdder:             r.PowerAdder,
 			LifespanMultiplier:     r.LifespanMultiplier,

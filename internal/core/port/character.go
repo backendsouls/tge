@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"tge/internal/core/domain/character"
+	"tge/internal/core/domain/progression"
 )
 
 var (
@@ -11,6 +12,10 @@ var (
 	ErrCharacterNotFound = errors.New("character: not found")
 	// ErrCharacterExists is returned when saving a character whose name is taken.
 	ErrCharacterExists = errors.New("character: already exists")
+	// ErrInvalidTrainingPoints is returned when training with non-positive points.
+	ErrInvalidTrainingPoints = errors.New("cultivation: training points must be positive")
+	// ErrNoRealms is returned when a fresh cultivation has no realms to start in.
+	ErrNoRealms = errors.New("cultivation: no realms available to cultivate in")
 )
 
 // CreateCharacterInput describes the mortal character to create. Type and Gender
@@ -37,26 +42,45 @@ type GiveItemInput struct {
 // node. System defaults to the character's first power system and Path to the
 // System name; the state is anchored to the given Realm and Level.
 type CultivateInput struct {
-	Character   string
-	System      string
-	Path        string
-	Realm       string
-	LevelNumber int
-	LevelName   string
-	Points      int
-	Progress    float64
+	Character          string
+	System             string
+	Path               string
+	Realm              string
+	LevelNumber        int
+	LevelName          string
+	BreakthroughPoints int // the level's breakthrough threshold
+	BottleneckPoints   int // the level's bottleneck threshold
+	Points             int // accumulated breakthrough progress
+	Bottleneck         int // accumulated bottleneck progress
+	Progress           float64
+}
+
+// TrainInput adds cultivation points to a character's power node, filling the
+// current level's breakthrough then bottleneck gate and advancing through levels
+// and realms. System defaults to the character's first power system and Path to
+// the System name. Realms is the tier-ordered realm sequence (with levels) the
+// caller supplies so the use case can advance across realms.
+type TrainInput struct {
+	Character string
+	System    string
+	Path      string
+	Points    int
+	Realms    []progression.Realm
 }
 
 // CultivationRecord is one persisted cultivation entry for a character: the
 // progress at a single (System, Path) node.
 type CultivationRecord struct {
-	System      string
-	Path        string
-	Realm       string
-	LevelNumber int
-	LevelName   string
-	Points      int
-	Progress    float64
+	System             string
+	Path               string
+	Realm              string
+	LevelNumber        int
+	LevelName          string
+	BreakthroughPoints int
+	BottleneckPoints   int
+	Points             int
+	Bottleneck         int
+	Progress           float64
 }
 
 // CharacterRepository is a driven port persisting characters keyed by name.
@@ -84,4 +108,7 @@ type CharacterService interface {
 	// Cultivate sets a character's cultivation state at a power node and returns
 	// the updated character.
 	Cultivate(ctx context.Context, in CultivateInput) (character.Character, error)
+	// Train adds cultivation points to a character's power node, advancing its
+	// level (and realm) as the breakthrough and bottleneck gates fill.
+	Train(ctx context.Context, in TrainInput) (character.Character, error)
 }

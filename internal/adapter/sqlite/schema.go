@@ -34,12 +34,12 @@ func open(dsn string) (*sql.DB, error) {
 		initErr = goose.SetDialect("sqlite3")
 	})
 	if initErr != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("configure migrations: %w", initErr)
 	}
 
 	if err := goose.Up(db, "migrations"); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("apply migrations: %w", err)
 	}
 	return db, nil

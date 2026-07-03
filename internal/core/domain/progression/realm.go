@@ -30,6 +30,10 @@ var (
 type Realm struct {
 	Name string
 
+	// Tier orders realms into a sequence (tier 1 = lowest). It is what "first
+	// realm" and "next realm" resolve against; 0 means unordered.
+	Tier int
+
 	PowerMultiplier float64 // a in the power formula
 	PowerAdder      float64 // b in the power formula
 
@@ -95,6 +99,7 @@ func (r *Realm) AddLevel(number int, name string, breakthroughPoints, bottleneck
 // RealmConfig holds the attributes used to construct a Realm.
 type RealmConfig struct {
 	Name                   string
+	Tier                   int
 	PowerMultiplier        float64
 	PowerAdder             float64
 	LifespanMultiplier     float64
@@ -123,6 +128,7 @@ func NewRealm(cfg RealmConfig) (Realm, error) {
 
 	return Realm{
 		Name:                   name,
+		Tier:                   cfg.Tier,
 		PowerMultiplier:        cfg.PowerMultiplier,
 		PowerAdder:             cfg.PowerAdder,
 		LifespanMultiplier:     cfg.LifespanMultiplier,
@@ -141,4 +147,15 @@ func (r Realm) Power(x float64) float64 {
 // Lifespan returns the cultivator's lifespan at progress x using ax + b.
 func (r Realm) Lifespan(x float64) float64 {
 	return r.LifespanMultiplier*x + r.LifespanAdder
+}
+
+// nextLevel returns the realm's level immediately above the given number, and
+// whether one exists. Levels are kept sorted by Number.
+func (r Realm) nextLevel(number int) (Level, bool) {
+	for _, l := range r.Levels {
+		if l.Number > number {
+			return l, true
+		}
+	}
+	return Level{}, false
 }
