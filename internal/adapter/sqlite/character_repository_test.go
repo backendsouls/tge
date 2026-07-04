@@ -18,7 +18,7 @@ func newCharRepo(t *testing.T, dsn string) *sqlite.CharacterRepository {
 	if err != nil {
 		t.Fatalf("open character repo: %v", err)
 	}
-	t.Cleanup(func() { repo.Close() })
+	t.Cleanup(func() { _ = repo.Close() })
 	return repo
 }
 

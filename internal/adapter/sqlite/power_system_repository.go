@@ -72,7 +72,7 @@ func (r *PowerSystemRepository) List(ctx context.Context) ([]progression.PowerSy
 	if err != nil {
 		return nil, fmt.Errorf("list power systems: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var systems []progression.PowerSystem
 	for rows.Next() {
@@ -100,7 +100,7 @@ func (r *PowerSystemRepository) SavePowers(ctx context.Context, system progressi
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if _, err := tx.ExecContext(ctx, `DELETE FROM powers WHERE system = ?`, system.Name); err != nil {
 		return fmt.Errorf("clear powers: %w", err)
@@ -136,7 +136,7 @@ func (r *PowerSystemRepository) loadPowers(ctx context.Context, ps *progression.
 	if err != nil {
 		return fmt.Errorf("load powers: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// node keeps mutable children while we link the adjacency list.
 	type node struct {

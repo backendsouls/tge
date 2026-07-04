@@ -19,7 +19,7 @@ func newPSRepo(t *testing.T) *sqlite.PowerSystemRepository {
 	if err != nil {
 		t.Fatalf("open power system repo: %v", err)
 	}
-	t.Cleanup(func() { repo.Close() })
+	t.Cleanup(func() { _ = repo.Close() })
 	return repo
 }
 

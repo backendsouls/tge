@@ -19,7 +19,7 @@ func newUniverseRepo(t *testing.T) *sqlite.UniverseRepository {
 	if err != nil {
 		t.Fatalf("open universe repo: %v", err)
 	}
-	t.Cleanup(func() { repo.Close() })
+	t.Cleanup(func() { _ = repo.Close() })
 	return repo
 }
 

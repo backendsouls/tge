@@ -76,7 +76,7 @@ func (r *UniverseRepository) List(ctx context.Context) ([]cosmology.Universe, er
 	if err != nil {
 		return nil, fmt.Errorf("list universes: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var universes []cosmology.Universe
 	for rows.Next() {
@@ -106,7 +106,7 @@ func (r *UniverseRepository) SaveSystems(ctx context.Context, u cosmology.Univer
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if _, err := tx.ExecContext(ctx, `DELETE FROM universe_systems WHERE universe = ?`, u.Name); err != nil {
 		return fmt.Errorf("clear universe systems: %w", err)
@@ -126,7 +126,7 @@ func (r *UniverseRepository) SaveRealms(ctx context.Context, u cosmology.Univers
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if _, err := tx.ExecContext(ctx, `DELETE FROM universe_realms WHERE universe = ?`, u.Name); err != nil {
 		return fmt.Errorf("clear universe realms: %w", err)
@@ -147,7 +147,7 @@ func (r *UniverseRepository) loadRealms(ctx context.Context, u *cosmology.Univer
 	if err != nil {
 		return fmt.Errorf("load universe realms: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	u.Realms = nil
 	for rows.Next() {
@@ -185,7 +185,7 @@ func (r *UniverseRepository) loadSystems(ctx context.Context, u *cosmology.Unive
 	if err != nil {
 		return fmt.Errorf("load universe systems: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	u.Systems = nil
 	for rows.Next() {

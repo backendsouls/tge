@@ -20,7 +20,7 @@ func newRepo(t *testing.T) *sqlite.RealmRepository {
 	if err != nil {
 		t.Fatalf("open repository: %v", err)
 	}
-	t.Cleanup(func() { repo.Close() })
+	t.Cleanup(func() { _ = repo.Close() })
 	return repo
 }
 

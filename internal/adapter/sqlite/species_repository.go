@@ -64,7 +64,7 @@ func (r *SpeciesRepository) List(ctx context.Context) ([]character.Species, erro
 	if err != nil {
 		return nil, fmt.Errorf("list species: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var list []character.Species
 	for rows.Next() {

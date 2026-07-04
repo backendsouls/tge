@@ -88,7 +88,7 @@ func (r *TimelineRepository) Find(ctx context.Context, owner port.LocationRef) (
 	if err != nil {
 		return cosmology.Timeline{}, fmt.Errorf("load timeline events: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var e cosmology.Event
 		if err := rows.Scan(&e.Order, &e.Description); err != nil {

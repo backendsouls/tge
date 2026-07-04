@@ -35,8 +35,8 @@ func NewAbilityRepository(dsn string) (*AbilityRepository, error) {
 }
 func (r *AbilityRepository) Close() error { return r.db.Close() }
 
-func (r *AbilityRepository) Save(ctx context.Context, a rpg.Ability) error {
-	_, err := r.db.ExecContext(ctx, `INSERT INTO abilities (name, description) VALUES (?, ?)`, a.Name, a.Description)
+func (r *AbilityRepository) Save(ctx context.Context, item rpg.Ability) error {
+	_, err := r.db.ExecContext(ctx, `INSERT INTO abilities (name, description, grade) VALUES (?, ?, ?)`, item.Name, item.Description, item.Grade)
 	if err != nil {
 		if isUniqueConstraint(err) {
 			return port.ErrAbilityExists
@@ -46,31 +46,22 @@ func (r *AbilityRepository) Save(ctx context.Context, a rpg.Ability) error {
 	return nil
 }
 func (r *AbilityRepository) FindByName(ctx context.Context, name string) (rpg.Ability, error) {
-	var a rpg.Ability
-	err := r.db.QueryRowContext(ctx, `SELECT name, description FROM abilities WHERE name = ?`, name).Scan(&a.Name, &a.Description)
+	var item rpg.Ability
+	err := r.db.QueryRowContext(ctx, `SELECT name, description, grade FROM abilities WHERE name = ?`, name).Scan(&item.Name, &item.Description, &item.Grade)
 	if errors.Is(err, sql.ErrNoRows) {
 		return rpg.Ability{}, fmt.Errorf("%w: %q", port.ErrAbilityNotFound, name)
 	}
 	if err != nil {
 		return rpg.Ability{}, fmt.Errorf("find ability: %w", err)
 	}
-	return a, nil
+	return item, nil
 }
 func (r *AbilityRepository) List(ctx context.Context) ([]rpg.Ability, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT name, description FROM abilities ORDER BY name`)
-	if err != nil {
-		return nil, fmt.Errorf("list abilities: %w", err)
-	}
-	defer rows.Close()
-	var list []rpg.Ability
-	for rows.Next() {
-		var a rpg.Ability
-		if err := rows.Scan(&a.Name, &a.Description); err != nil {
-			return nil, err
-		}
-		list = append(list, a)
-	}
-	return list, rows.Err()
+	return queryList(ctx, r.db, `SELECT name, description, grade FROM abilities ORDER BY name`, func(rows *sql.Rows) (rpg.Ability, error) {
+		var item rpg.Ability
+		err := rows.Scan(&item.Name, &item.Description, &item.Grade)
+		return item, err
+	})
 }
 
 // --- Skill ---
@@ -86,8 +77,8 @@ func NewSkillRepository(dsn string) (*SkillRepository, error) {
 }
 func (r *SkillRepository) Close() error { return r.db.Close() }
 
-func (r *SkillRepository) Save(ctx context.Context, s rpg.Skill) error {
-	_, err := r.db.ExecContext(ctx, `INSERT INTO skills (name, description) VALUES (?, ?)`, s.Name, s.Description)
+func (r *SkillRepository) Save(ctx context.Context, item rpg.Skill) error {
+	_, err := r.db.ExecContext(ctx, `INSERT INTO skills (name, description, grade) VALUES (?, ?, ?)`, item.Name, item.Description, item.Grade)
 	if err != nil {
 		if isUniqueConstraint(err) {
 			return port.ErrSkillExists
@@ -97,31 +88,22 @@ func (r *SkillRepository) Save(ctx context.Context, s rpg.Skill) error {
 	return nil
 }
 func (r *SkillRepository) FindByName(ctx context.Context, name string) (rpg.Skill, error) {
-	var s rpg.Skill
-	err := r.db.QueryRowContext(ctx, `SELECT name, description FROM skills WHERE name = ?`, name).Scan(&s.Name, &s.Description)
+	var item rpg.Skill
+	err := r.db.QueryRowContext(ctx, `SELECT name, description, grade FROM skills WHERE name = ?`, name).Scan(&item.Name, &item.Description, &item.Grade)
 	if errors.Is(err, sql.ErrNoRows) {
 		return rpg.Skill{}, fmt.Errorf("%w: %q", port.ErrSkillNotFound, name)
 	}
 	if err != nil {
 		return rpg.Skill{}, fmt.Errorf("find skill: %w", err)
 	}
-	return s, nil
+	return item, nil
 }
 func (r *SkillRepository) List(ctx context.Context) ([]rpg.Skill, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT name, description FROM skills ORDER BY name`)
-	if err != nil {
-		return nil, fmt.Errorf("list skills: %w", err)
-	}
-	defer rows.Close()
-	var list []rpg.Skill
-	for rows.Next() {
-		var s rpg.Skill
-		if err := rows.Scan(&s.Name, &s.Description); err != nil {
-			return nil, err
-		}
-		list = append(list, s)
-	}
-	return list, rows.Err()
+	return queryList(ctx, r.db, `SELECT name, description, grade FROM skills ORDER BY name`, func(rows *sql.Rows) (rpg.Skill, error) {
+		var item rpg.Skill
+		err := rows.Scan(&item.Name, &item.Description, &item.Grade)
+		return item, err
+	})
 }
 
 // --- Item ---
@@ -137,8 +119,8 @@ func NewItemRepository(dsn string) (*ItemRepository, error) {
 }
 func (r *ItemRepository) Close() error { return r.db.Close() }
 
-func (r *ItemRepository) Save(ctx context.Context, i rpg.Item) error {
-	_, err := r.db.ExecContext(ctx, `INSERT INTO items (name, description) VALUES (?, ?)`, i.Name, i.Description)
+func (r *ItemRepository) Save(ctx context.Context, item rpg.Item) error {
+	_, err := r.db.ExecContext(ctx, `INSERT INTO items (name, description, grade) VALUES (?, ?, ?)`, item.Name, item.Description, item.Grade)
 	if err != nil {
 		if isUniqueConstraint(err) {
 			return port.ErrItemExists
@@ -148,31 +130,22 @@ func (r *ItemRepository) Save(ctx context.Context, i rpg.Item) error {
 	return nil
 }
 func (r *ItemRepository) FindByName(ctx context.Context, name string) (rpg.Item, error) {
-	var i rpg.Item
-	err := r.db.QueryRowContext(ctx, `SELECT name, description FROM items WHERE name = ?`, name).Scan(&i.Name, &i.Description)
+	var item rpg.Item
+	err := r.db.QueryRowContext(ctx, `SELECT name, description, grade FROM items WHERE name = ?`, name).Scan(&item.Name, &item.Description, &item.Grade)
 	if errors.Is(err, sql.ErrNoRows) {
 		return rpg.Item{}, fmt.Errorf("%w: %q", port.ErrItemNotFound, name)
 	}
 	if err != nil {
 		return rpg.Item{}, fmt.Errorf("find item: %w", err)
 	}
-	return i, nil
+	return item, nil
 }
 func (r *ItemRepository) List(ctx context.Context) ([]rpg.Item, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT name, description FROM items ORDER BY name`)
-	if err != nil {
-		return nil, fmt.Errorf("list items: %w", err)
-	}
-	defer rows.Close()
-	var list []rpg.Item
-	for rows.Next() {
-		var i rpg.Item
-		if err := rows.Scan(&i.Name, &i.Description); err != nil {
-			return nil, err
-		}
-		list = append(list, i)
-	}
-	return list, rows.Err()
+	return queryList(ctx, r.db, `SELECT name, description, grade FROM items ORDER BY name`, func(rows *sql.Rows) (rpg.Item, error) {
+		var item rpg.Item
+		err := rows.Scan(&item.Name, &item.Description, &item.Grade)
+		return item, err
+	})
 }
 
 // --- Effect ---
@@ -212,22 +185,13 @@ func (r *EffectRepository) FindByName(ctx context.Context, name string) (rpg.Eff
 	return e, nil
 }
 func (r *EffectRepository) List(ctx context.Context) ([]rpg.Effect, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT name, kind, description FROM effects ORDER BY name`)
-	if err != nil {
-		return nil, fmt.Errorf("list effects: %w", err)
-	}
-	defer rows.Close()
-	var list []rpg.Effect
-	for rows.Next() {
+	return queryList(ctx, r.db, `SELECT name, kind, description FROM effects ORDER BY name`, func(rows *sql.Rows) (rpg.Effect, error) {
 		var e rpg.Effect
 		var kind string
-		if err := rows.Scan(&e.Name, &kind, &e.Description); err != nil {
-			return nil, err
-		}
+		err := rows.Scan(&e.Name, &kind, &e.Description)
 		e.Kind = rpg.EffectKind(kind)
-		list = append(list, e)
-	}
-	return list, rows.Err()
+		return e, err
+	})
 }
 
 // --- Equipment ---
@@ -267,20 +231,9 @@ func (r *EquipmentRepository) FindByName(ctx context.Context, name string) (rpg.
 	return e, nil
 }
 func (r *EquipmentRepository) List(ctx context.Context) ([]rpg.Equipment, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT name, slot, str, agi, intel, vit, dex, wis, cha, luk FROM equipment ORDER BY name`)
-	if err != nil {
-		return nil, fmt.Errorf("list equipment: %w", err)
-	}
-	defer rows.Close()
-	var list []rpg.Equipment
-	for rows.Next() {
-		e, err := scanEquipment(rows)
-		if err != nil {
-			return nil, err
-		}
-		list = append(list, e)
-	}
-	return list, rows.Err()
+	return queryList(ctx, r.db, `SELECT name, slot, str, agi, intel, vit, dex, wis, cha, luk FROM equipment ORDER BY name`, func(rows *sql.Rows) (rpg.Equipment, error) {
+		return scanEquipment(rows)
+	})
 }
 
 func scanEquipment(s scanner) (rpg.Equipment, error) {
@@ -307,8 +260,8 @@ func NewProfessionRepository(dsn string) (*ProfessionRepository, error) {
 }
 func (r *ProfessionRepository) Close() error { return r.db.Close() }
 
-func (r *ProfessionRepository) Save(ctx context.Context, p rpg.Profession) error {
-	_, err := r.db.ExecContext(ctx, `INSERT INTO professions (name, description) VALUES (?, ?)`, p.Name, p.Description)
+func (r *ProfessionRepository) Save(ctx context.Context, item rpg.Profession) error {
+	_, err := r.db.ExecContext(ctx, `INSERT INTO professions (name, description, grade) VALUES (?, ?, ?)`, item.Name, item.Description, item.Grade)
 	if err != nil {
 		if isUniqueConstraint(err) {
 			return port.ErrProfessionExists
@@ -318,31 +271,22 @@ func (r *ProfessionRepository) Save(ctx context.Context, p rpg.Profession) error
 	return nil
 }
 func (r *ProfessionRepository) FindByName(ctx context.Context, name string) (rpg.Profession, error) {
-	var p rpg.Profession
-	err := r.db.QueryRowContext(ctx, `SELECT name, description FROM professions WHERE name = ?`, name).Scan(&p.Name, &p.Description)
+	var item rpg.Profession
+	err := r.db.QueryRowContext(ctx, `SELECT name, description, grade FROM professions WHERE name = ?`, name).Scan(&item.Name, &item.Description, &item.Grade)
 	if errors.Is(err, sql.ErrNoRows) {
 		return rpg.Profession{}, fmt.Errorf("%w: %q", port.ErrProfessionNotFound, name)
 	}
 	if err != nil {
 		return rpg.Profession{}, fmt.Errorf("find profession: %w", err)
 	}
-	return p, nil
+	return item, nil
 }
 func (r *ProfessionRepository) List(ctx context.Context) ([]rpg.Profession, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT name, description FROM professions ORDER BY name`)
-	if err != nil {
-		return nil, fmt.Errorf("list professions: %w", err)
-	}
-	defer rows.Close()
-	var list []rpg.Profession
-	for rows.Next() {
-		var p rpg.Profession
-		if err := rows.Scan(&p.Name, &p.Description); err != nil {
-			return nil, err
-		}
-		list = append(list, p)
-	}
-	return list, rows.Err()
+	return queryList(ctx, r.db, `SELECT name, description, grade FROM professions ORDER BY name`, func(rows *sql.Rows) (rpg.Profession, error) {
+		var item rpg.Profession
+		err := rows.Scan(&item.Name, &item.Description, &item.Grade)
+		return item, err
+	})
 }
 
 // --- Class ---
@@ -358,8 +302,8 @@ func NewClassRepository(dsn string) (*ClassRepository, error) {
 }
 func (r *ClassRepository) Close() error { return r.db.Close() }
 
-func (r *ClassRepository) Save(ctx context.Context, c rpg.Class) error {
-	_, err := r.db.ExecContext(ctx, `INSERT INTO classes (name, description) VALUES (?, ?)`, c.Name, c.Description)
+func (r *ClassRepository) Save(ctx context.Context, item rpg.Class) error {
+	_, err := r.db.ExecContext(ctx, `INSERT INTO classes (name, description, grade) VALUES (?, ?, ?)`, item.Name, item.Description, item.Grade)
 	if err != nil {
 		if isUniqueConstraint(err) {
 			return port.ErrClassExists
@@ -369,31 +313,22 @@ func (r *ClassRepository) Save(ctx context.Context, c rpg.Class) error {
 	return nil
 }
 func (r *ClassRepository) FindByName(ctx context.Context, name string) (rpg.Class, error) {
-	var c rpg.Class
-	err := r.db.QueryRowContext(ctx, `SELECT name, description FROM classes WHERE name = ?`, name).Scan(&c.Name, &c.Description)
+	var item rpg.Class
+	err := r.db.QueryRowContext(ctx, `SELECT name, description, grade FROM classes WHERE name = ?`, name).Scan(&item.Name, &item.Description, &item.Grade)
 	if errors.Is(err, sql.ErrNoRows) {
 		return rpg.Class{}, fmt.Errorf("%w: %q", port.ErrClassNotFound, name)
 	}
 	if err != nil {
 		return rpg.Class{}, fmt.Errorf("find class: %w", err)
 	}
-	return c, nil
+	return item, nil
 }
 func (r *ClassRepository) List(ctx context.Context) ([]rpg.Class, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT name, description FROM classes ORDER BY name`)
-	if err != nil {
-		return nil, fmt.Errorf("list classes: %w", err)
-	}
-	defer rows.Close()
-	var list []rpg.Class
-	for rows.Next() {
-		var c rpg.Class
-		if err := rows.Scan(&c.Name, &c.Description); err != nil {
-			return nil, err
-		}
-		list = append(list, c)
-	}
-	return list, rows.Err()
+	return queryList(ctx, r.db, `SELECT name, description, grade FROM classes ORDER BY name`, func(rows *sql.Rows) (rpg.Class, error) {
+		var item rpg.Class
+		err := rows.Scan(&item.Name, &item.Description, &item.Grade)
+		return item, err
+	})
 }
 
 // --- Quest ---
@@ -442,7 +377,7 @@ func (r *QuestRepository) FindByName(ctx context.Context, name string) (rpg.Ques
 	if err != nil {
 		return rpg.Quest{}, fmt.Errorf("load quest objectives: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var o rpg.Objective
 		if err := rows.Scan(&o.Order, &o.Description); err != nil {
@@ -457,7 +392,7 @@ func (r *QuestRepository) List(ctx context.Context) ([]rpg.Quest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list quests: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var list []rpg.Quest
 	for rows.Next() {
 		var q rpg.Quest
@@ -515,7 +450,7 @@ func (r *RecipeRepository) FindByName(ctx context.Context, name string) (rpg.Rec
 	if err != nil {
 		return rpg.Recipe{}, fmt.Errorf("load recipe inputs: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var in rpg.Ingredient
 		if err := rows.Scan(&in.Item, &in.Quantity); err != nil {
@@ -530,7 +465,7 @@ func (r *RecipeRepository) List(ctx context.Context) ([]rpg.Recipe, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list recipes: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var list []rpg.Recipe
 	for rows.Next() {
 		var rc rpg.Recipe
@@ -554,3 +489,20 @@ var (
 	_ port.QuestRepository      = (*QuestRepository)(nil)
 	_ port.RecipeRepository     = (*RecipeRepository)(nil)
 )
+
+func queryList[T any](ctx context.Context, db *sql.DB, query string, scan func(*sql.Rows) (T, error)) ([]T, error) {
+	rows, err := db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	var list []T
+	for rows.Next() {
+		item, err := scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, item)
+	}
+	return list, rows.Err()
+}

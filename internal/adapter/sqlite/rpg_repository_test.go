@@ -17,10 +17,10 @@ func TestAbilityRepository_SaveFindList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	t.Cleanup(func() { repo.Close() })
+	t.Cleanup(func() { _ = repo.Close() })
 	ctx := context.Background()
 
-	a, _ := rpg.NewAbility("Berserk", "rage")
+	a, _ := rpg.NewAbility("Berserk", "rage", "Common")
 	if err := repo.Save(ctx, a); err != nil {
 		t.Fatalf("save: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestEquipmentRepository_RoundTripStats(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	t.Cleanup(func() { repo.Close() })
+	t.Cleanup(func() { _ = repo.Close() })
 	ctx := context.Background()
 
 	eq, _ := rpg.NewEquipment("Steel Plate", rpg.Armor, rpg.Stats{STR: 2, VIT: 5})
@@ -68,7 +68,7 @@ func TestQuestRepository_Objectives(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	t.Cleanup(func() { repo.Close() })
+	t.Cleanup(func() { _ = repo.Close() })
 	ctx := context.Background()
 
 	q, _ := rpg.NewQuest("Slay Dragon", "")

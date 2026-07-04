@@ -43,7 +43,7 @@ func (r *CharacterRepository) Save(ctx context.Context, c character.Character) e
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	const insChar = `INSERT INTO characters
 		(name, type, gender, species, power, age, lifespan, class, profession)
@@ -117,16 +117,21 @@ func (r *CharacterRepository) AddItem(ctx context.Context, character, item strin
 // node, replacing any existing state there.
 func (r *CharacterRepository) SaveCultivation(ctx context.Context, character string, rec port.CultivationRecord) error {
 	const q = `INSERT INTO character_cultivations
-		(character, system, path, realm, level_number, level_name, points, progress)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		(character, system, path, realm, level_number, level_name,
+		 breakthrough_points, bottleneck_points, points, bottleneck, progress)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(character, system, path) DO UPDATE SET
 			realm = excluded.realm,
 			level_number = excluded.level_number,
 			level_name = excluded.level_name,
+			breakthrough_points = excluded.breakthrough_points,
+			bottleneck_points = excluded.bottleneck_points,
 			points = excluded.points,
+			bottleneck = excluded.bottleneck,
 			progress = excluded.progress`
 	_, err := r.db.ExecContext(ctx, q,
-		character, rec.System, rec.Path, rec.Realm, rec.LevelNumber, rec.LevelName, rec.Points, rec.Progress)
+		character, rec.System, rec.Path, rec.Realm, rec.LevelNumber, rec.LevelName,
+		rec.BreakthroughPoints, rec.BottleneckPoints, rec.Points, rec.Bottleneck, rec.Progress)
 	if err != nil {
 		return fmt.Errorf("save cultivation: %w", err)
 	}
@@ -141,7 +146,7 @@ func (r *CharacterRepository) MainCharacters(ctx context.Context) ([]character.C
 	if err != nil {
 		return nil, fmt.Errorf("query main characters: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var chars []character.Character
 	for rows.Next() {
@@ -183,7 +188,7 @@ func (r *CharacterRepository) List(ctx context.Context) ([]character.Character, 
 	if err != nil {
 		return nil, fmt.Errorf("list characters: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var chars []character.Character
 	for rows.Next() {
@@ -260,7 +265,7 @@ func (r *CharacterRepository) loadInventory(ctx context.Context, c *character.Ch
 	if err != nil {
 		return fmt.Errorf("load character inventory: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	c.Inventory = rpg.Inventory{}
 	for rows.Next() {
@@ -280,7 +285,7 @@ func (r *CharacterRepository) loadSystems(ctx context.Context, c *character.Char
 	if err != nil {
 		return fmt.Errorf("load character systems: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	c.PowerSystems = nil
 	for rows.Next() {
@@ -301,31 +306,39 @@ func (r *CharacterRepository) loadSystems(ctx context.Context, c *character.Char
 // CultivationState). Rows are grouped preserving insertion order.
 func (r *CharacterRepository) loadCultivations(ctx context.Context, c *character.Character) error {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT system, path, realm, level_number, level_name, points, progress
+		`SELECT system, path, realm, level_number, level_name,
+		        breakthrough_points, bottleneck_points, points, bottleneck, progress
 		 FROM character_cultivations WHERE character = ? ORDER BY rowid`, c.Name)
 	if err != nil {
 		return fmt.Errorf("load character cultivations: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	c.Power = nil
 	bySystem := map[string]int{} // system name -> index into c.Power
 	for rows.Next() {
 		var (
-			system, path, realm, levelName string
-			levelNumber, points            int
-			progress                       float64
+			system, path, realm, levelName                                        string
+			levelNumber, breakthroughPoints, bottleneckPoints, points, bottleneck int
+			progress                                                              float64
 		)
-		if err := rows.Scan(&system, &path, &realm, &levelNumber, &levelName, &points, &progress); err != nil {
+		if err := rows.Scan(&system, &path, &realm, &levelNumber, &levelName,
+			&breakthroughPoints, &bottleneckPoints, &points, &bottleneck, &progress); err != nil {
 			return fmt.Errorf("scan cultivation: %w", err)
 		}
 		node := progression.Power{
 			Name: path,
 			State: progression.CultivationState{
-				Realm:    progression.Realm{Name: realm},
-				Level:    progression.Level{Number: levelNumber, Name: levelName},
-				Points:   points,
-				Progress: progress,
+				Realm: progression.Realm{Name: realm},
+				Level: progression.Level{
+					Number:             levelNumber,
+					Name:               levelName,
+					BreakthroughPoints: breakthroughPoints,
+					BottleneckPoints:   bottleneckPoints,
+				},
+				Points:     points,
+				Bottleneck: bottleneck,
+				Progress:   progress,
 			},
 		}
 		idx, ok := bySystem[system]

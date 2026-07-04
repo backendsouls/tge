@@ -71,7 +71,7 @@ func (r *OmniverseRepository) FindByName(ctx context.Context, name string) (cosm
 	if err != nil {
 		return cosmology.Omniverse{}, fmt.Errorf("load omniverse multiverses: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var m string
 		if err := rows.Scan(&m); err != nil {
@@ -87,7 +87,7 @@ func (r *OmniverseRepository) List(ctx context.Context) ([]cosmology.Omniverse, 
 	if err != nil {
 		return nil, fmt.Errorf("list omniverses: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var list []cosmology.Omniverse
 	for rows.Next() {
@@ -108,12 +108,12 @@ func (r *OmniverseRepository) List(ctx context.Context) ([]cosmology.Omniverse, 
 		for mr.Next() {
 			var m string
 			if err := mr.Scan(&m); err != nil {
-				mr.Close()
+				_ = mr.Close()
 				return nil, err
 			}
 			list[i].Multiverses = append(list[i].Multiverses, cosmology.Multiverse{Name: m})
 		}
-		mr.Close()
+		_ = mr.Close()
 	}
 	return list, nil
 }

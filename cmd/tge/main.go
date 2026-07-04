@@ -15,6 +15,7 @@ import (
 	"tge/internal/config"
 	"tge/internal/core/domain/character"
 	"tge/internal/core/service"
+	"tge/internal/logger"
 )
 
 func main() {
@@ -29,142 +30,126 @@ func run() int {
 
 	defaults, err := config.Load()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
+	}
+
+	if defaults.SystemLog.Template != "" {
+		logger.SetSystemTemplate(defaults.SystemLog.Template)
 	}
 
 	realmRepo, err := sqlite.NewRealmRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer realmRepo.Close()
+	defer closeRepo(realmRepo)
 
 	psRepo, err := sqlite.NewPowerSystemRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer psRepo.Close()
+	defer closeRepo(psRepo)
 
 	universeRepo, err := sqlite.NewUniverseRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer universeRepo.Close()
+	defer closeRepo(universeRepo)
 
 	charRepo, err := sqlite.NewCharacterRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer charRepo.Close()
+	defer closeRepo(charRepo)
 
 	novelRepo, err := sqlite.NewNovelRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer novelRepo.Close()
+	defer closeRepo(novelRepo)
 
 	speciesRepo, err := sqlite.NewSpeciesRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer speciesRepo.Close()
+	defer closeRepo(speciesRepo)
 
 	multiverseRepo, err := sqlite.NewMultiverseRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer multiverseRepo.Close()
+	defer closeRepo(multiverseRepo)
 
 	omniverseRepo, err := sqlite.NewOmniverseRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer omniverseRepo.Close()
+	defer closeRepo(omniverseRepo)
 
 	realityRepo, err := sqlite.NewRealityRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer realityRepo.Close()
+	defer closeRepo(realityRepo)
 
 	timelineRepo, err := sqlite.NewTimelineRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer timelineRepo.Close()
+	defer closeRepo(timelineRepo)
 
 	abilityRepo, err := sqlite.NewAbilityRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer abilityRepo.Close()
+	defer closeRepo(abilityRepo)
 
 	skillRepo, err := sqlite.NewSkillRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer skillRepo.Close()
+	defer closeRepo(skillRepo)
 
 	itemRepo, err := sqlite.NewItemRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer itemRepo.Close()
+	defer closeRepo(itemRepo)
 
 	effectRepo, err := sqlite.NewEffectRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer effectRepo.Close()
+	defer closeRepo(effectRepo)
 
 	equipmentRepo, err := sqlite.NewEquipmentRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer equipmentRepo.Close()
+	defer closeRepo(equipmentRepo)
 
 	professionRepo, err := sqlite.NewProfessionRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer professionRepo.Close()
+	defer closeRepo(professionRepo)
 
 	classRepo, err := sqlite.NewClassRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer classRepo.Close()
+	defer closeRepo(classRepo)
 
 	questRepo, err := sqlite.NewQuestRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer questRepo.Close()
+	defer closeRepo(questRepo)
 
 	recipeRepo, err := sqlite.NewRecipeRepository(dbPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		return 1
+		return fail(err)
 	}
-	defer recipeRepo.Close()
+	defer closeRepo(recipeRepo)
 
 	realmSvc := service.NewRealmService(realmRepo)
 	psSvc := service.NewPowerSystemService(psRepo)
@@ -217,10 +202,20 @@ func run() int {
 		realms:  realmSvc,
 		rpg:     rpgSvcs,
 	}, defaults.Catalog); err != nil {
-		fmt.Fprintf(os.Stderr, "error: seeding defaults: %v\n", err)
-		return 1
+		return fail(fmt.Errorf("seeding defaults: %w", err))
 	}
 
 	app := cli.New(realmSvc, psSvc, universeSvc, multiverseSvc, omniverseSvc, realitySvc, timelineSvc, charSvc, novelSvc, speciesSvc, rpgSvcs, os.Stdout, os.Stderr)
 	return app.Run(context.Background(), os.Args[1:])
+}
+
+func fail(err error) int {
+	logger.Dev("error: %v", err)
+	return 1
+}
+
+func closeRepo(c interface{ Close() error }) {
+	if err := c.Close(); err != nil {
+		logger.Dev("error closing repository: %v", err)
+	}
 }

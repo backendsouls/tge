@@ -71,7 +71,7 @@ func (r *RealityRepository) FindByName(ctx context.Context, name string) (cosmol
 	if err != nil {
 		return cosmology.Reality{}, fmt.Errorf("load reality omniverses: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var o string
 		if err := rows.Scan(&o); err != nil {
@@ -87,7 +87,7 @@ func (r *RealityRepository) List(ctx context.Context) ([]cosmology.Reality, erro
 	if err != nil {
 		return nil, fmt.Errorf("list realities: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var list []cosmology.Reality
 	for rows.Next() {
@@ -108,12 +108,12 @@ func (r *RealityRepository) List(ctx context.Context) ([]cosmology.Reality, erro
 		for or.Next() {
 			var o string
 			if err := or.Scan(&o); err != nil {
-				or.Close()
+				_ = or.Close()
 				return nil, err
 			}
 			list[i].Omniverses = append(list[i].Omniverses, cosmology.Omniverse{Name: o})
 		}
-		or.Close()
+		_ = or.Close()
 	}
 	return list, nil
 }

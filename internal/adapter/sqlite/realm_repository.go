@@ -41,13 +41,13 @@ func (r *RealmRepository) Save(ctx context.Context, realm progression.Realm) err
 INSERT INTO realms (
 	name, power_multiplier, power_adder,
 	lifespan_multiplier, lifespan_adder,
-	bottleneck_points, max_levels, main_max_levels
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+	bottleneck_points, max_levels, main_max_levels, tier
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := r.db.ExecContext(ctx, q,
 		realm.Name, realm.PowerMultiplier, realm.PowerAdder,
 		realm.LifespanMultiplier, realm.LifespanAdder,
-		realm.BottleneckPoints, realm.MaxLevels, realm.MainCharacterMaxLevels,
+		realm.BottleneckPoints, realm.MaxLevels, realm.MainCharacterMaxLevels, realm.Tier,
 	)
 	if err != nil {
 		if serr, ok := errors.AsType[*sqlitedrv.Error](err); ok {
@@ -66,7 +66,7 @@ func (r *RealmRepository) FindByName(ctx context.Context, name string) (progress
 	const q = `
 SELECT name, power_multiplier, power_adder,
        lifespan_multiplier, lifespan_adder,
-       bottleneck_points, max_levels, main_max_levels
+       bottleneck_points, max_levels, main_max_levels, tier
 FROM realms WHERE name = ?`
 
 	realm, err := scanRealm(r.db.QueryRowContext(ctx, q, name))
@@ -106,7 +106,7 @@ func (r *RealmRepository) loadLevels(ctx context.Context, realm *progression.Rea
 	if err != nil {
 		return fmt.Errorf("load realm levels: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	realm.Levels = nil
 	for rows.Next() {
@@ -124,14 +124,14 @@ func (r *RealmRepository) List(ctx context.Context) ([]progression.Realm, error)
 	const q = `
 SELECT name, power_multiplier, power_adder,
        lifespan_multiplier, lifespan_adder,
-       bottleneck_points, max_levels, main_max_levels
-FROM realms ORDER BY name`
+       bottleneck_points, max_levels, main_max_levels, tier
+FROM realms ORDER BY tier, name`
 
 	rows, err := r.db.QueryContext(ctx, q)
 	if err != nil {
 		return nil, fmt.Errorf("list realms: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var realms []progression.Realm
 	for rows.Next() {
@@ -162,7 +162,7 @@ func scanRealm(s scanner) (progression.Realm, error) {
 	err := s.Scan(
 		&realm.Name, &realm.PowerMultiplier, &realm.PowerAdder,
 		&realm.LifespanMultiplier, &realm.LifespanAdder,
-		&realm.BottleneckPoints, &realm.MaxLevels, &realm.MainCharacterMaxLevels,
+		&realm.BottleneckPoints, &realm.MaxLevels, &realm.MainCharacterMaxLevels, &realm.Tier,
 	)
 	return realm, err
 }

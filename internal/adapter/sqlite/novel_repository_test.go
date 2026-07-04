@@ -18,7 +18,7 @@ func newNovelRepo(t *testing.T) *sqlite.NovelRepository {
 	if err != nil {
 		t.Fatalf("open novel repo: %v", err)
 	}
-	t.Cleanup(func() { repo.Close() })
+	t.Cleanup(func() { _ = repo.Close() })
 	return repo
 }
 

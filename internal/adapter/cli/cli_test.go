@@ -65,6 +65,8 @@ type fakeCharacterService struct {
 	listErr    error
 	cultivated *port.CultivateInput
 	cultErr    error
+	trained    *port.TrainInput
+	trainErr   error
 }
 
 func (f *fakeCharacterService) CreateCharacter(_ context.Context, in port.CreateCharacterInput) (character.Character, error) {
@@ -106,6 +108,11 @@ func (f *fakeCharacterService) GiveItem(context.Context, port.GiveItemInput) (ch
 func (f *fakeCharacterService) Cultivate(_ context.Context, in port.CultivateInput) (character.Character, error) {
 	f.cultivated = &in
 	return f.main, f.cultErr
+}
+
+func (f *fakeCharacterService) Train(_ context.Context, in port.TrainInput) (character.Character, error) {
+	f.trained = &in
+	return f.main, f.trainErr
 }
 
 // fakePowerSystemService is a port.PowerSystemService double for driving the CLI.

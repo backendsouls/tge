@@ -55,7 +55,7 @@ func (r *NovelRepository) List(ctx context.Context) ([]novel.Novel, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list novels: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var novels []novel.Novel
 	for rows.Next() {
@@ -111,7 +111,7 @@ func (r *NovelRepository) SaveStructure(ctx context.Context, n novel.Novel) erro
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if _, err := tx.ExecContext(ctx, `DELETE FROM chapters WHERE novel = ?`, n.Title); err != nil {
 		return fmt.Errorf("clear chapters: %w", err)
@@ -144,7 +144,7 @@ func (r *NovelRepository) loadStructure(ctx context.Context, n *novel.Novel) err
 	if err != nil {
 		return fmt.Errorf("load volumes: %w", err)
 	}
-	defer vrows.Close()
+	defer func() { _ = vrows.Close() }()
 
 	byNumber := map[int]*novel.Volume{}
 	n.Volumes = nil
@@ -167,7 +167,7 @@ func (r *NovelRepository) loadStructure(ctx context.Context, n *novel.Novel) err
 	if err != nil {
 		return fmt.Errorf("load chapters: %w", err)
 	}
-	defer crows.Close()
+	defer func() { _ = crows.Close() }()
 
 	for crows.Next() {
 		var volume int

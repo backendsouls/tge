@@ -18,6 +18,7 @@ import (
 	"tge/internal/core/domain/character"
 	"tge/internal/core/domain/progression"
 	"tge/internal/core/port"
+	"tge/internal/logger"
 )
 
 // App dispatches CLI commands to the application services.
@@ -106,7 +107,7 @@ func (a *App) Run(ctx context.Context, args []string) int {
 	case "status":
 		return a.status(ctx, args[1:])
 	default:
-		fmt.Fprintf(a.err, "unknown command %q\n", args[0])
+		_, _ = fmt.Fprintf(a.err, "unknown command %q\n", args[0])
 		a.usage()
 		return 2
 	}
@@ -114,7 +115,7 @@ func (a *App) Run(ctx context.Context, args []string) int {
 
 func (a *App) runRealm(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(a.err, "usage: tge realm <add|add-level|list|show>")
+		_, _ = fmt.Fprintln(a.err, "usage: tge realm <add|add-level|list|show>")
 		return 2
 	}
 	switch args[0] {
@@ -127,7 +128,7 @@ func (a *App) runRealm(ctx context.Context, args []string) int {
 	case "show":
 		return a.realmShow(ctx, args[1:])
 	default:
-		fmt.Fprintf(a.err, "unknown realm subcommand %q\n", args[0])
+		_, _ = fmt.Fprintf(a.err, "unknown realm subcommand %q\n", args[0])
 		return 2
 	}
 }
@@ -145,10 +146,9 @@ func (a *App) realmAddLevel(ctx context.Context, args []string) int {
 		return 2
 	}
 	if _, err := a.realms.AddLevel(ctx, in); err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added level %d (%q) to realm %q\n", in.Number, in.Name, in.Realm)
+	_, _ = fmt.Fprintf(a.out, "added level %d (%q) to realm %q\n", in.Number, in.Name, in.Realm)
 	return 0
 }
 
@@ -161,20 +161,19 @@ func (a *App) realmShow(ctx context.Context, args []string) int {
 	}
 	r, err := a.realms.GetRealm(ctx, *name)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "%s\n", r.Name)
-	fmt.Fprintf(a.out, "  power: %gx+%g, lifespan: %gx+%g\n",
+	_, _ = fmt.Fprintf(a.out, "%s\n", r.Name)
+	_, _ = fmt.Fprintf(a.out, "  power: %gx+%g, lifespan: %gx+%g\n",
 		r.PowerMultiplier, r.PowerAdder, r.LifespanMultiplier, r.LifespanAdder)
 	caps := fmt.Sprintf("normal %s, main %s", levelCap(r.MaxLevelsFor(false)), levelCap(r.MaxLevelsFor(true)))
 	if len(r.Levels) == 0 {
-		fmt.Fprintf(a.out, "  Levels: none (%s)\n", caps)
+		_, _ = fmt.Fprintf(a.out, "  Levels: none (%s)\n", caps)
 		return 0
 	}
-	fmt.Fprintf(a.out, "  Levels (%d defined; %s):\n", len(r.Levels), caps)
+	_, _ = fmt.Fprintf(a.out, "  Levels (%d defined; %s):\n", len(r.Levels), caps)
 	for _, l := range r.Levels {
-		fmt.Fprintf(a.out, "    %d. %s (breakthrough %d, bottleneck %d)\n",
+		_, _ = fmt.Fprintf(a.out, "    %d. %s (breakthrough %d, bottleneck %d)\n",
 			l.Number, l.Name, l.BreakthroughPoints, l.BottleneckPoints)
 	}
 	return 0
@@ -193,6 +192,7 @@ func (a *App) realmAdd(ctx context.Context, args []string) int {
 	fs.SetOutput(a.err)
 	var cfg progression.RealmConfig
 	fs.StringVar(&cfg.Name, "name", "", "realm name")
+	fs.IntVar(&cfg.Tier, "tier", 0, "realm tier ordering (1 = lowest; 0 = unordered)")
 	fs.Float64Var(&cfg.PowerMultiplier, "power-mult", 0, "power multiplier (a in ax+b)")
 	fs.Float64Var(&cfg.PowerAdder, "power-add", 0, "power adder (b in ax+b)")
 	fs.Float64Var(&cfg.LifespanMultiplier, "lifespan-mult", 0, "lifespan multiplier (a in ax+b)")
@@ -206,28 +206,26 @@ func (a *App) realmAdd(ctx context.Context, args []string) int {
 
 	r, err := a.realms.AddRealm(ctx, cfg)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added realm %q\n", r.Name)
+	_, _ = fmt.Fprintf(a.out, "added realm %q\n", r.Name)
 	return 0
 }
 
 func (a *App) realmList(ctx context.Context) int {
 	realms, err := a.realms.ListRealms(ctx)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
 	if len(realms) == 0 {
-		fmt.Fprintln(a.out, "no realms")
+		_, _ = fmt.Fprintln(a.out, "no realms")
 		return 0
 	}
 
 	tw := tabwriter.NewWriter(a.out, 0, 2, 2, ' ', 0)
-	fmt.Fprintln(tw, "NAME\tPOWER(ax+b)\tLIFESPAN(ax+b)\tBOTTLENECK\tLEVELS\tMAX(normal/main)")
+	_, _ = fmt.Fprintln(tw, "NAME\tPOWER(ax+b)\tLIFESPAN(ax+b)\tBOTTLENECK\tLEVELS\tMAX(normal/main)")
 	for _, r := range realms {
-		fmt.Fprintf(tw, "%s\t%gx+%g\t%gx+%g\t%d\t%d\t%s/%s\n",
+		_, _ = fmt.Fprintf(tw, "%s\t%gx+%g\t%gx+%g\t%d\t%d\t%s/%s\n",
 			r.Name,
 			r.PowerMultiplier, r.PowerAdder,
 			r.LifespanMultiplier, r.LifespanAdder,
@@ -248,7 +246,7 @@ func (s *stringSlice) Set(v string) error { *s = append(*s, v); return nil }
 
 func (a *App) runCharacter(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(a.err, "usage: tge character <create|list|give-item|cultivate>")
+		_, _ = fmt.Fprintln(a.err, "usage: tge character <create|list|give-item|cultivate|train>")
 		return 2
 	}
 	switch args[0] {
@@ -260,8 +258,10 @@ func (a *App) runCharacter(ctx context.Context, args []string) int {
 		return a.characterGiveItem(ctx, args[1:])
 	case "cultivate":
 		return a.characterCultivate(ctx, args[1:])
+	case "train":
+		return a.characterTrain(ctx, args[1:])
 	default:
-		fmt.Fprintf(a.err, "unknown character subcommand %q\n", args[0])
+		_, _ = fmt.Fprintf(a.err, "unknown character subcommand %q\n", args[0])
 		return 2
 	}
 }
@@ -277,10 +277,9 @@ func (a *App) characterGiveItem(ctx context.Context, args []string) int {
 		return 2
 	}
 	if _, err := a.characters.GiveItem(ctx, in); err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "gave %d x %q to %q\n", in.Quantity, in.Item, in.Character)
+	_, _ = fmt.Fprintf(a.out, "gave %d x %q to %q\n", in.Quantity, in.Item, in.Character)
 	return 0
 }
 
@@ -300,25 +299,88 @@ func (a *App) characterCultivate(ctx context.Context, args []string) int {
 
 	realm, err := a.resolveRealm(ctx, realmName)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
 	lvl, ok := levelByNumber(realm, *level)
 	if !ok {
-		fmt.Fprintf(a.err, "error: realm %q has no level %d\n", realm.Name, *level)
-		return 1
+		return a.fail(fmt.Errorf("realm %q has no level %d", realm.Name, *level))
 	}
 	in.Realm = realm.Name
 	in.LevelNumber = lvl.Number
 	in.LevelName = lvl.Name
+	in.BreakthroughPoints = lvl.BreakthroughPoints
+	in.BottleneckPoints = lvl.BottleneckPoints
 
 	c, err := a.characters.Cultivate(ctx, in)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "%s now cultivating in %s, %s\n", c.Name, realm.Name, lvl.Name)
+	logger.System("Congratulation to %s on stepping into %s, %s!", c.Name, realm.Name, lvl.Name)
+	_, _ = fmt.Fprintf(a.out, "%s now cultivating in %s, %s\n", c.Name, realm.Name, lvl.Name)
 	return 0
+}
+
+func (a *App) characterTrain(ctx context.Context, args []string) int {
+	fs := flag.NewFlagSet("character train", flag.ContinueOnError)
+	fs.SetOutput(a.err)
+	var in port.TrainInput
+	fs.StringVar(&in.Character, "name", "", "character name")
+	fs.StringVar(&in.System, "system", "", "power system (defaults to the character's first system)")
+	fs.StringVar(&in.Path, "path", "", "power/path node (defaults to the system name)")
+	fs.IntVar(&in.Points, "points", 0, "cultivation points to add")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+
+	realms, err := a.realms.ListRealms(ctx)
+	if err != nil {
+		return a.fail(err)
+	}
+	in.Realms = realms
+
+	c, err := a.characters.Train(ctx, in)
+	if err != nil {
+		return a.fail(err)
+	}
+
+	// Resolve the effective node (mirroring the service defaults) to report progress.
+	system := in.System
+	if system == "" && len(c.PowerSystems) > 0 {
+		system = c.PowerSystems[0].Name
+	}
+	path := in.Path
+	if path == "" {
+		path = system
+	}
+	if cs, ok := findCultivation(c, system, path); ok {
+		logger.System("Training complete! %s gained %d cultivation points.", c.Name, in.Points)
+		_, _ = fmt.Fprintf(a.out, "%s trained +%d — %s, %s (breakthrough %d/%d, bottleneck %d/%d)\n",
+			c.Name, in.Points, cs.Realm.Name, cs.Level.Name,
+			cs.Points, cs.Level.BreakthroughPoints, cs.Bottleneck, cs.Level.BottleneckPoints)
+	} else {
+		logger.System("Training complete! %s gained %d cultivation points.", c.Name, in.Points)
+		_, _ = fmt.Fprintf(a.out, "%s trained +%d points\n", c.Name, in.Points)
+	}
+	return 0
+}
+
+// findCultivation returns the CultivationState at a character's (system, path)
+// node. Empty system/path match the first system and its node respectively.
+func findCultivation(c character.Character, system, path string) (progression.CultivationState, bool) {
+	for _, ps := range c.Power {
+		if system != "" && ps.Name != system {
+			continue
+		}
+		for _, p := range ps.Powers {
+			if path != "" && p.Name != path {
+				continue
+			}
+			if cs, ok := p.State.(progression.CultivationState); ok {
+				return cs, true
+			}
+		}
+	}
+	return progression.CultivationState{}, false
 }
 
 // resolveRealm returns the named realm, or the first listed realm when name is
@@ -366,27 +428,26 @@ func (a *App) characterCreate(ctx context.Context, args []string) int {
 
 	c, err := a.characters.CreateCharacter(ctx, in)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "created %s %q (%s, %s)\n", c.Type, c.Name, c.Gender, speciesName(c.Species))
+	logger.System("Host has bound to new character: %s!", c.Name)
+	_, _ = fmt.Fprintf(a.out, "created %s %q (%s, %s)\n", c.Type, c.Name, c.Gender, speciesName(c.Species))
 	return 0
 }
 
 func (a *App) characterList(ctx context.Context) int {
 	chars, err := a.characters.ListCharacters(ctx)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
 	if len(chars) == 0 {
-		fmt.Fprintln(a.out, "no characters")
+		_, _ = fmt.Fprintln(a.out, "no characters")
 		return 0
 	}
 	tw := tabwriter.NewWriter(a.out, 0, 2, 2, ' ', 0)
-	fmt.Fprintln(tw, "NAME\tTYPE\tGENDER\tSPECIES\tPOWER\tSYSTEMS")
+	_, _ = fmt.Fprintln(tw, "NAME\tTYPE\tGENDER\tSPECIES\tPOWER\tSYSTEMS")
 	for _, c := range chars {
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n",
 			c.Name, c.Type, c.Gender, speciesName(c.Species), c.PowerValue, strings.Join(systemNames(c.PowerSystems), ", "))
 	}
 	tw.Flush()
@@ -405,53 +466,52 @@ func (a *App) status(ctx context.Context, args []string) int {
 	if err != nil {
 		if errors.Is(err, port.ErrCharacterNotFound) {
 			if *name != "" {
-				fmt.Fprintf(a.err, "no character named %q\n", *name)
+				_, _ = fmt.Fprintf(a.err, "no character named %q\n", *name)
 			} else {
-				fmt.Fprintln(a.err, "no main character yet; create one with: tge character create --name ... --type MainCharacter --gender ... --system ...")
+				_, _ = fmt.Fprintln(a.err, "no main character yet; create one with: tge character create --name ... --type MainCharacter --gender ... --system ...")
 			}
 			return 1
 		}
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
 
-	fmt.Fprintf(a.out, "%s  (%s, %s)\n", c.Name, c.Gender, speciesName(c.Species))
-	fmt.Fprintf(a.out, "  power: %s\n", c.PowerValue)
-	fmt.Fprintf(a.out, "  Age %d/%d\n", c.Mortal.Age, c.Mortal.Lifespan)
+	_, _ = fmt.Fprintf(a.out, "%s  (%s, %s)\n", c.Name, c.Gender, speciesName(c.Species))
+	_, _ = fmt.Fprintf(a.out, "  power: %s\n", c.PowerValue)
+	_, _ = fmt.Fprintf(a.out, "  Age %d/%d\n", c.Mortal.Age, c.Mortal.Lifespan)
 	if c.Class.Name != "" {
-		fmt.Fprintf(a.out, "  Class: %s\n", c.Class.Name)
+		_, _ = fmt.Fprintf(a.out, "  Class: %s\n", c.Class.Name)
 	}
 	if c.Profession.Name != "" {
-		fmt.Fprintf(a.out, "  Profession: %s\n", c.Profession.Name)
+		_, _ = fmt.Fprintf(a.out, "  Profession: %s\n", c.Profession.Name)
 	}
-	fmt.Fprintf(a.out, "  Stats: %s\n", formatStats(c.Stats))
+	_, _ = fmt.Fprintf(a.out, "  Stats: %s\n", formatStats(c.Stats))
 	systems := systemNames(c.PowerSystems)
 	if len(systems) == 0 {
-		fmt.Fprintln(a.out, "  Systems: none")
+		_, _ = fmt.Fprintln(a.out, "  Systems: none")
 	} else {
-		fmt.Fprintf(a.out, "  Systems: %s\n", strings.Join(systems, ", "))
+		_, _ = fmt.Fprintf(a.out, "  Systems: %s\n", strings.Join(systems, ", "))
 	}
 	if len(c.Power) == 0 {
-		fmt.Fprintln(a.out, "  Power: none")
+		_, _ = fmt.Fprintln(a.out, "  Power: none")
 	} else {
-		fmt.Fprintln(a.out, "  Power:")
+		_, _ = fmt.Fprintln(a.out, "  Power:")
 		for _, ps := range c.Power {
 			label := string(ps.Kind)
 			if label == "" {
 				label = ps.Name
 			}
-			fmt.Fprintf(a.out, "    - %s:\n", label)
+			_, _ = fmt.Fprintf(a.out, "    - %s:\n", label)
 			for _, p := range ps.Powers {
 				writePowerState(a.out, p, 3)
 			}
 		}
 	}
 	if len(c.Inventory.Items) == 0 {
-		fmt.Fprintln(a.out, "  Inventory: empty")
+		_, _ = fmt.Fprintln(a.out, "  Inventory: empty")
 	} else {
-		fmt.Fprintln(a.out, "  Inventory:")
+		_, _ = fmt.Fprintln(a.out, "  Inventory:")
 		for _, st := range c.Inventory.Items {
-			fmt.Fprintf(a.out, "    %d x %s\n", st.Quantity, st.Item)
+			_, _ = fmt.Fprintf(a.out, "    %d x %s\n", st.Quantity, st.Item)
 		}
 	}
 	return 0
@@ -484,7 +544,7 @@ func speciesName(species []character.Species) string {
 
 func (a *App) runPowerSystem(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(a.err, "usage: tge powersystem <add|add-power|list|show>")
+		_, _ = fmt.Fprintln(a.err, "usage: tge powersystem <add|add-power|list|show>")
 		return 2
 	}
 	switch args[0] {
@@ -497,7 +557,7 @@ func (a *App) runPowerSystem(ctx context.Context, args []string) int {
 	case "show":
 		return a.powerSystemShow(ctx, args[1:])
 	default:
-		fmt.Fprintf(a.err, "unknown powersystem subcommand %q\n", args[0])
+		_, _ = fmt.Fprintf(a.err, "unknown powersystem subcommand %q\n", args[0])
 		return 2
 	}
 }
@@ -511,10 +571,9 @@ func (a *App) powerSystemAdd(ctx context.Context, args []string) int {
 	}
 	ps, err := a.powerSystems.CreateSystem(ctx, *name)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added power system %q\n", ps.Name)
+	_, _ = fmt.Fprintf(a.out, "added power system %q\n", ps.Name)
 	return 0
 }
 
@@ -529,25 +588,23 @@ func (a *App) powerSystemAddPower(ctx context.Context, args []string) int {
 		return 2
 	}
 	if _, err := a.powerSystems.AddPower(ctx, in); err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added power %q to %q\n", in.Name, in.System)
+	_, _ = fmt.Fprintf(a.out, "added power %q to %q\n", in.Name, in.System)
 	return 0
 }
 
 func (a *App) powerSystemList(ctx context.Context) int {
 	systems, err := a.powerSystems.ListSystems(ctx)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
 	if len(systems) == 0 {
-		fmt.Fprintln(a.out, "no power systems")
+		_, _ = fmt.Fprintln(a.out, "no power systems")
 		return 0
 	}
 	for _, ps := range systems {
-		fmt.Fprintf(a.out, "%s (%d powers)\n", ps.Name, len(ps.Names()))
+		_, _ = fmt.Fprintf(a.out, "%s (%d powers)\n", ps.Name, len(ps.Names()))
 	}
 	return 0
 }
@@ -561,10 +618,9 @@ func (a *App) powerSystemShow(ctx context.Context, args []string) int {
 	}
 	ps, err := a.powerSystems.GetSystem(ctx, *name)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintln(a.out, ps.Name)
+	_, _ = fmt.Fprintln(a.out, ps.Name)
 	for _, p := range ps.Powers {
 		writePowerTree(a.out, p, 1)
 	}
@@ -573,7 +629,7 @@ func (a *App) powerSystemShow(ctx context.Context, args []string) int {
 
 // writePowerTree renders a power and its children with indentation.
 func writePowerTree(w io.Writer, p progression.Power, depth int) {
-	fmt.Fprintf(w, "%s- %s\n", strings.Repeat("  ", depth), p.Name)
+	_, _ = fmt.Fprintf(w, "%s- %s\n", strings.Repeat("  ", depth), p.Name)
 	for _, c := range p.Children {
 		writePowerTree(w, c, depth+1)
 	}
@@ -584,10 +640,12 @@ func writePowerTree(w io.Writer, p progression.Power, depth int) {
 // CultivationState, recursing into sub-powers.
 func writePowerState(w io.Writer, p progression.Power, depth int) {
 	indent := strings.Repeat("  ", depth)
-	fmt.Fprintf(w, "%s- %s:\n", indent, p.Name)
+	_, _ = fmt.Fprintf(w, "%s- %s:\n", indent, p.Name)
 	if cs, ok := p.State.(progression.CultivationState); ok {
-		fmt.Fprintf(w, "%s  - Realm: %s\n", indent, cs.Realm.Name)
-		fmt.Fprintf(w, "%s  - Level: %s\n", indent, cs.Level.Name)
+		_, _ = fmt.Fprintf(w, "%s  - Realm: %s\n", indent, cs.Realm.Name)
+		_, _ = fmt.Fprintf(w, "%s  - Level: %s\n", indent, cs.Level.Name)
+		_, _ = fmt.Fprintf(w, "%s  - Breakthrough: %d/%d\n", indent, cs.Points, cs.Level.BreakthroughPoints)
+		_, _ = fmt.Fprintf(w, "%s  - Bottleneck: %d/%d\n", indent, cs.Bottleneck, cs.Level.BottleneckPoints)
 	}
 	for _, c := range p.Children {
 		writePowerState(w, c, depth+1)
@@ -596,7 +654,7 @@ func writePowerState(w io.Writer, p progression.Power, depth int) {
 
 func (a *App) runUniverse(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(a.err, "usage: tge universe <add|add-system|list|show>")
+		_, _ = fmt.Fprintln(a.err, "usage: tge universe <add|add-system|list|show>")
 		return 2
 	}
 	switch args[0] {
@@ -609,7 +667,7 @@ func (a *App) runUniverse(ctx context.Context, args []string) int {
 	case "show":
 		return a.universeShow(ctx, args[1:])
 	default:
-		fmt.Fprintf(a.err, "unknown universe subcommand %q\n", args[0])
+		_, _ = fmt.Fprintf(a.err, "unknown universe subcommand %q\n", args[0])
 		return 2
 	}
 }
@@ -623,10 +681,9 @@ func (a *App) universeAdd(ctx context.Context, args []string) int {
 	}
 	u, err := a.universes.CreateUniverse(ctx, *name)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added universe %q\n", u.Name)
+	_, _ = fmt.Fprintf(a.out, "added universe %q\n", u.Name)
 	return 0
 }
 
@@ -640,25 +697,23 @@ func (a *App) universeAddSystem(ctx context.Context, args []string) int {
 		return 2
 	}
 	if _, err := a.universes.AddSystem(ctx, in); err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added power system %q to universe %q\n", in.System, in.Universe)
+	_, _ = fmt.Fprintf(a.out, "added power system %q to universe %q\n", in.System, in.Universe)
 	return 0
 }
 
 func (a *App) universeList(ctx context.Context) int {
 	universes, err := a.universes.ListUniverses(ctx)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
 	if len(universes) == 0 {
-		fmt.Fprintln(a.out, "no universes")
+		_, _ = fmt.Fprintln(a.out, "no universes")
 		return 0
 	}
 	for _, u := range universes {
-		fmt.Fprintf(a.out, "%s (%d power systems)\n", u.Name, len(u.Systems))
+		_, _ = fmt.Fprintf(a.out, "%s (%d power systems)\n", u.Name, len(u.Systems))
 	}
 	return 0
 }
@@ -672,19 +727,18 @@ func (a *App) universeShow(ctx context.Context, args []string) int {
 	}
 	u, err := a.universes.GetUniverse(ctx, *name)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintln(a.out, u.Name)
+	_, _ = fmt.Fprintln(a.out, u.Name)
 	for _, s := range u.Systems {
-		fmt.Fprintf(a.out, "  - %s\n", s.Name)
+		_, _ = fmt.Fprintf(a.out, "  - %s\n", s.Name)
 	}
 	return 0
 }
 
 func (a *App) runNovel(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(a.err, "usage: tge novel <add|list>")
+		_, _ = fmt.Fprintln(a.err, "usage: tge novel <add|list>")
 		return 2
 	}
 	switch args[0] {
@@ -699,7 +753,7 @@ func (a *App) runNovel(ctx context.Context, args []string) int {
 	case "show":
 		return a.novelShow(ctx, args[1:])
 	default:
-		fmt.Fprintf(a.err, "unknown novel subcommand %q\n", args[0])
+		_, _ = fmt.Fprintf(a.err, "unknown novel subcommand %q\n", args[0])
 		return 2
 	}
 }
@@ -715,26 +769,24 @@ func (a *App) novelAdd(ctx context.Context, args []string) int {
 	}
 	n, err := a.novels.CreateNovel(ctx, in)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added novel %q (main character %q)\n", n.Title, n.MainCharacter)
+	_, _ = fmt.Fprintf(a.out, "added novel %q (main character %q)\n", n.Title, n.MainCharacter)
 	return 0
 }
 
 func (a *App) novelList(ctx context.Context) int {
 	novels, err := a.novels.ListNovels(ctx)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
 	if len(novels) == 0 {
-		fmt.Fprintln(a.out, "no novels")
+		_, _ = fmt.Fprintln(a.out, "no novels")
 		return 0
 	}
 	tw := tabwriter.NewWriter(a.out, 0, 2, 2, ' ', 0)
 	for _, n := range novels {
-		fmt.Fprintf(tw, "%s\t-> %s\n", n.Title, a.describeCharacter(ctx, n.MainCharacter))
+		_, _ = fmt.Fprintf(tw, "%s\t-> %s\n", n.Title, a.describeCharacter(ctx, n.MainCharacter))
 	}
 	tw.Flush()
 	return 0
@@ -751,10 +803,9 @@ func (a *App) novelAddVolume(ctx context.Context, args []string) int {
 		return 2
 	}
 	if _, err := a.novels.AddVolume(ctx, in); err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added volume %d to %q\n", in.Number, in.Novel)
+	_, _ = fmt.Fprintf(a.out, "added volume %d to %q\n", in.Number, in.Novel)
 	return 0
 }
 
@@ -770,10 +821,9 @@ func (a *App) novelAddChapter(ctx context.Context, args []string) int {
 		return 2
 	}
 	if _, err := a.novels.AddChapter(ctx, in); err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added chapter %d to volume %d of %q\n", in.Number, in.Volume, in.Novel)
+	_, _ = fmt.Fprintf(a.out, "added chapter %d to volume %d of %q\n", in.Number, in.Volume, in.Novel)
 	return 0
 }
 
@@ -786,15 +836,14 @@ func (a *App) novelShow(ctx context.Context, args []string) int {
 	}
 	n, err := a.novels.GetNovel(ctx, *title)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
 
-	fmt.Fprintf(a.out, "%s  (main character: %s)\n", n.Title, n.MainCharacter)
+	_, _ = fmt.Fprintf(a.out, "%s  (main character: %s)\n", n.Title, n.MainCharacter)
 	for _, v := range n.Volumes {
-		fmt.Fprintf(a.out, "  %s\n", heading("Volume", v.Number, v.Title))
+		_, _ = fmt.Fprintf(a.out, "  %s\n", heading("Volume", v.Number, v.Title))
 		for _, c := range v.Chapters {
-			fmt.Fprintf(a.out, "    %s\n", heading("Chapter", c.Number, c.Title))
+			_, _ = fmt.Fprintf(a.out, "    %s\n", heading("Chapter", c.Number, c.Title))
 		}
 	}
 	return 0
@@ -819,12 +868,12 @@ func (a *App) describeCharacter(ctx context.Context, name string) string {
 }
 
 func (a *App) usage() {
-	fmt.Fprintln(a.err, "usage: tge <realm|powersystem|universe|multiverse|omniverse|reality|timeline|character|novel|species|ability|skill|item|effect|equipment|profession|class|quest|recipe|status> ...")
+	_, _ = fmt.Fprintln(a.err, "usage: tge <realm|powersystem|universe|multiverse|omniverse|reality|timeline|character|novel|species|ability|skill|item|effect|equipment|profession|class|quest|recipe|status> ...")
 }
 
 func (a *App) runMultiverse(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(a.err, "usage: tge multiverse <add|add-universe|list|show>")
+		_, _ = fmt.Fprintln(a.err, "usage: tge multiverse <add|add-universe|list|show>")
 		return 2
 	}
 	switch args[0] {
@@ -837,7 +886,7 @@ func (a *App) runMultiverse(ctx context.Context, args []string) int {
 	case "show":
 		return a.multiverseShow(ctx, args[1:])
 	default:
-		fmt.Fprintf(a.err, "unknown multiverse subcommand %q\n", args[0])
+		_, _ = fmt.Fprintf(a.err, "unknown multiverse subcommand %q\n", args[0])
 		return 2
 	}
 }
@@ -851,10 +900,9 @@ func (a *App) multiverseAdd(ctx context.Context, args []string) int {
 	}
 	m, err := a.multiverses.CreateMultiverse(ctx, *name)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added multiverse %q\n", m.Name)
+	_, _ = fmt.Fprintf(a.out, "added multiverse %q\n", m.Name)
 	return 0
 }
 
@@ -868,25 +916,23 @@ func (a *App) multiverseAddUniverse(ctx context.Context, args []string) int {
 		return 2
 	}
 	if _, err := a.multiverses.AddUniverse(ctx, in); err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added universe %q to multiverse %q\n", in.Universe, in.Multiverse)
+	_, _ = fmt.Fprintf(a.out, "added universe %q to multiverse %q\n", in.Universe, in.Multiverse)
 	return 0
 }
 
 func (a *App) multiverseList(ctx context.Context) int {
 	multiverses, err := a.multiverses.ListMultiverses(ctx)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
 	if len(multiverses) == 0 {
-		fmt.Fprintln(a.out, "no multiverses")
+		_, _ = fmt.Fprintln(a.out, "no multiverses")
 		return 0
 	}
 	for _, m := range multiverses {
-		fmt.Fprintf(a.out, "%s (%d universes)\n", m.Name, len(m.Universes))
+		_, _ = fmt.Fprintf(a.out, "%s (%d universes)\n", m.Name, len(m.Universes))
 	}
 	return 0
 }
@@ -900,19 +946,18 @@ func (a *App) multiverseShow(ctx context.Context, args []string) int {
 	}
 	m, err := a.multiverses.GetMultiverse(ctx, *name)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintln(a.out, m.Name)
+	_, _ = fmt.Fprintln(a.out, m.Name)
 	for _, u := range m.Universes {
-		fmt.Fprintf(a.out, "  - %s\n", u.Name)
+		_, _ = fmt.Fprintf(a.out, "  - %s\n", u.Name)
 	}
 	return 0
 }
 
 func (a *App) runOmniverse(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(a.err, "usage: tge omniverse <add|add-multiverse|list|show>")
+		_, _ = fmt.Fprintln(a.err, "usage: tge omniverse <add|add-multiverse|list|show>")
 		return 2
 	}
 	switch args[0] {
@@ -925,7 +970,7 @@ func (a *App) runOmniverse(ctx context.Context, args []string) int {
 	case "show":
 		return a.omniverseShow(ctx, args[1:])
 	default:
-		fmt.Fprintf(a.err, "unknown omniverse subcommand %q\n", args[0])
+		_, _ = fmt.Fprintf(a.err, "unknown omniverse subcommand %q\n", args[0])
 		return 2
 	}
 }
@@ -939,10 +984,9 @@ func (a *App) omniverseAdd(ctx context.Context, args []string) int {
 	}
 	o, err := a.omniverses.CreateOmniverse(ctx, *name)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added omniverse %q\n", o.Name)
+	_, _ = fmt.Fprintf(a.out, "added omniverse %q\n", o.Name)
 	return 0
 }
 
@@ -956,25 +1000,23 @@ func (a *App) omniverseAddMultiverse(ctx context.Context, args []string) int {
 		return 2
 	}
 	if _, err := a.omniverses.AddMultiverse(ctx, in); err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added multiverse %q to omniverse %q\n", in.Multiverse, in.Omniverse)
+	_, _ = fmt.Fprintf(a.out, "added multiverse %q to omniverse %q\n", in.Multiverse, in.Omniverse)
 	return 0
 }
 
 func (a *App) omniverseList(ctx context.Context) int {
 	omniverses, err := a.omniverses.ListOmniverses(ctx)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
 	if len(omniverses) == 0 {
-		fmt.Fprintln(a.out, "no omniverses")
+		_, _ = fmt.Fprintln(a.out, "no omniverses")
 		return 0
 	}
 	for _, o := range omniverses {
-		fmt.Fprintf(a.out, "%s (%d multiverses)\n", o.Name, len(o.Multiverses))
+		_, _ = fmt.Fprintf(a.out, "%s (%d multiverses)\n", o.Name, len(o.Multiverses))
 	}
 	return 0
 }
@@ -988,19 +1030,18 @@ func (a *App) omniverseShow(ctx context.Context, args []string) int {
 	}
 	o, err := a.omniverses.GetOmniverse(ctx, *name)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintln(a.out, o.Name)
+	_, _ = fmt.Fprintln(a.out, o.Name)
 	for _, m := range o.Multiverses {
-		fmt.Fprintf(a.out, "  - %s\n", m.Name)
+		_, _ = fmt.Fprintf(a.out, "  - %s\n", m.Name)
 	}
 	return 0
 }
 
 func (a *App) runReality(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(a.err, "usage: tge reality <add|add-omniverse|list|show>")
+		_, _ = fmt.Fprintln(a.err, "usage: tge reality <add|add-omniverse|list|show>")
 		return 2
 	}
 	switch args[0] {
@@ -1013,7 +1054,7 @@ func (a *App) runReality(ctx context.Context, args []string) int {
 	case "show":
 		return a.realityShow(ctx, args[1:])
 	default:
-		fmt.Fprintf(a.err, "unknown reality subcommand %q\n", args[0])
+		_, _ = fmt.Fprintf(a.err, "unknown reality subcommand %q\n", args[0])
 		return 2
 	}
 }
@@ -1027,10 +1068,9 @@ func (a *App) realityAdd(ctx context.Context, args []string) int {
 	}
 	r, err := a.realities.CreateReality(ctx, *name)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added reality %q\n", r.Name)
+	_, _ = fmt.Fprintf(a.out, "added reality %q\n", r.Name)
 	return 0
 }
 
@@ -1044,25 +1084,23 @@ func (a *App) realityAddOmniverse(ctx context.Context, args []string) int {
 		return 2
 	}
 	if _, err := a.realities.AddOmniverse(ctx, in); err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added omniverse %q to reality %q\n", in.Omniverse, in.Reality)
+	_, _ = fmt.Fprintf(a.out, "added omniverse %q to reality %q\n", in.Omniverse, in.Reality)
 	return 0
 }
 
 func (a *App) realityList(ctx context.Context) int {
 	realities, err := a.realities.ListRealities(ctx)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
 	if len(realities) == 0 {
-		fmt.Fprintln(a.out, "no realities")
+		_, _ = fmt.Fprintln(a.out, "no realities")
 		return 0
 	}
 	for _, r := range realities {
-		fmt.Fprintf(a.out, "%s (%d omniverses)\n", r.Name, len(r.Omniverses))
+		_, _ = fmt.Fprintf(a.out, "%s (%d omniverses)\n", r.Name, len(r.Omniverses))
 	}
 	return 0
 }
@@ -1076,19 +1114,18 @@ func (a *App) realityShow(ctx context.Context, args []string) int {
 	}
 	r, err := a.realities.GetReality(ctx, *name)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintln(a.out, r.Name)
+	_, _ = fmt.Fprintln(a.out, r.Name)
 	for _, o := range r.Omniverses {
-		fmt.Fprintf(a.out, "  - %s\n", o.Name)
+		_, _ = fmt.Fprintf(a.out, "  - %s\n", o.Name)
 	}
 	return 0
 }
 
 func (a *App) runTimeline(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(a.err, "usage: tge timeline <show|add-event>")
+		_, _ = fmt.Fprintln(a.err, "usage: tge timeline <show|add-event>")
 		return 2
 	}
 	switch args[0] {
@@ -1097,7 +1134,7 @@ func (a *App) runTimeline(ctx context.Context, args []string) int {
 	case "add-event":
 		return a.timelineAddEvent(ctx, args[1:])
 	default:
-		fmt.Fprintf(a.err, "unknown timeline subcommand %q\n", args[0])
+		_, _ = fmt.Fprintf(a.err, "unknown timeline subcommand %q\n", args[0])
 		return 2
 	}
 }
@@ -1107,15 +1144,15 @@ func (a *App) runTimeline(ctx context.Context, args []string) int {
 func (a *App) locationRef(kind, name, universe string) (port.LocationRef, bool) {
 	k := port.LocationKind(kind)
 	if !k.Valid() {
-		fmt.Fprintf(a.err, "invalid location kind %q (want box|omniverse|multiverse|universe|realm)\n", kind)
+		_, _ = fmt.Fprintf(a.err, "invalid location kind %q (want box|omniverse|multiverse|universe|realm)\n", kind)
 		return port.LocationRef{}, false
 	}
 	if strings.TrimSpace(name) == "" {
-		fmt.Fprintln(a.err, "a location name is required (--name)")
+		_, _ = fmt.Fprintln(a.err, "a location name is required (--name)")
 		return port.LocationRef{}, false
 	}
 	if k == port.LocationRealm && strings.TrimSpace(universe) == "" {
-		fmt.Fprintln(a.err, "a realm timeline requires its universe (--universe)")
+		_, _ = fmt.Fprintln(a.err, "a realm timeline requires its universe (--universe)")
 		return port.LocationRef{}, false
 	}
 	return port.LocationRef{Kind: k, Name: name, Universe: universe}, true
@@ -1136,16 +1173,15 @@ func (a *App) timelineShow(ctx context.Context, args []string) int {
 	}
 	t, err := a.timelines.GetTimeline(ctx, owner)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintln(a.out, t.Name)
+	_, _ = fmt.Fprintln(a.out, t.Name)
 	if len(t.Events) == 0 {
-		fmt.Fprintln(a.out, "  (no events)")
+		_, _ = fmt.Fprintln(a.out, "  (no events)")
 		return 0
 	}
 	for _, e := range t.Events {
-		fmt.Fprintf(a.out, "  %d. %s\n", e.Order, e.Description)
+		_, _ = fmt.Fprintf(a.out, "  %d. %s\n", e.Order, e.Description)
 	}
 	return 0
 }
@@ -1167,16 +1203,15 @@ func (a *App) timelineAddEvent(ctx context.Context, args []string) int {
 	}
 	in := port.AddTimelineEventInput{Owner: owner, Order: *order, Description: *description}
 	if _, err := a.timelines.AddEvent(ctx, in); err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added event %d to %s %q timeline\n", *order, owner.Kind, owner.Name)
+	_, _ = fmt.Fprintf(a.out, "added event %d to %s %q timeline\n", *order, owner.Kind, owner.Name)
 	return 0
 }
 
 func (a *App) runSpecies(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(a.err, "usage: tge species <add|list>")
+		_, _ = fmt.Fprintln(a.err, "usage: tge species <add|list>")
 		return 2
 	}
 	switch args[0] {
@@ -1185,7 +1220,7 @@ func (a *App) runSpecies(ctx context.Context, args []string) int {
 	case "list":
 		return a.speciesList(ctx)
 	default:
-		fmt.Fprintf(a.err, "unknown species subcommand %q\n", args[0])
+		_, _ = fmt.Fprintf(a.err, "unknown species subcommand %q\n", args[0])
 		return 2
 	}
 }
@@ -1203,31 +1238,29 @@ func (a *App) speciesAdd(ctx context.Context, args []string) int {
 	}
 	s, err := a.species.CreateSpecies(ctx, in)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
-	fmt.Fprintf(a.out, "added species %q\n", s.Name)
+	_, _ = fmt.Fprintf(a.out, "added species %q\n", s.Name)
 	return 0
 }
 
 func (a *App) speciesList(ctx context.Context) int {
 	list, err := a.species.ListSpecies(ctx)
 	if err != nil {
-		fmt.Fprintf(a.err, "error: %v\n", err)
-		return 1
+		return a.fail(err)
 	}
 	if len(list) == 0 {
-		fmt.Fprintln(a.out, "no species")
+		_, _ = fmt.Fprintln(a.out, "no species")
 		return 0
 	}
 	tw := tabwriter.NewWriter(a.out, 0, 2, 2, ' ', 0)
-	fmt.Fprintln(tw, "NAME\tPOWER\tLIFESPAN\tDEFAULT-GENDER")
+	_, _ = fmt.Fprintln(tw, "NAME\tPOWER\tLIFESPAN\tDEFAULT-GENDER")
 	for _, s := range list {
 		gender := string(s.DefaultGender)
 		if gender == "" {
 			gender = "-"
 		}
-		fmt.Fprintf(tw, "%s\t%g\t%d\t%s\n", s.Name, s.Power, s.Lifespan, gender)
+		_, _ = fmt.Fprintf(tw, "%s\t%g\t%d\t%s\n", s.Name, s.Power, s.Lifespan, gender)
 	}
 	tw.Flush()
 	return 0

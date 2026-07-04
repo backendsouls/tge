@@ -71,7 +71,7 @@ func (r *MultiverseRepository) FindByName(ctx context.Context, name string) (cos
 	if err != nil {
 		return cosmology.Multiverse{}, fmt.Errorf("load multiverse universes: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var u string
 		if err := rows.Scan(&u); err != nil {
@@ -87,7 +87,7 @@ func (r *MultiverseRepository) List(ctx context.Context) ([]cosmology.Multiverse
 	if err != nil {
 		return nil, fmt.Errorf("list multiverses: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var list []cosmology.Multiverse
 	for rows.Next() {
@@ -108,12 +108,12 @@ func (r *MultiverseRepository) List(ctx context.Context) ([]cosmology.Multiverse
 		for ur.Next() {
 			var u string
 			if err := ur.Scan(&u); err != nil {
-				ur.Close()
+				_ = ur.Close()
 				return nil, err
 			}
 			list[i].Universes = append(list[i].Universes, cosmology.Universe{Name: u})
 		}
-		ur.Close()
+		_ = ur.Close()
 	}
 	return list, nil
 }
