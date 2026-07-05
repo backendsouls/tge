@@ -20,7 +20,7 @@ func NewAbilityService(repo port.AbilityRepository) *AbilityService {
 }
 
 func (s *AbilityService) CreateAbility(ctx context.Context, in port.CreateAbilityInput) (rpg.Ability, error) {
-	a, err := rpg.NewAbility(in.Name, in.Description)
+	a, err := rpg.NewAbility(in.Name, in.Description, in.Grade)
 	if err != nil {
 		return rpg.Ability{}, err
 	}
@@ -43,7 +43,7 @@ type SkillService struct{ repo port.SkillRepository }
 func NewSkillService(repo port.SkillRepository) *SkillService { return &SkillService{repo: repo} }
 
 func (s *SkillService) CreateSkill(ctx context.Context, in port.CreateSkillInput) (rpg.Skill, error) {
-	sk, err := rpg.NewSkill(in.Name, in.Description)
+	sk, err := rpg.NewSkill(in.Name, in.Description, in.Grade)
 	if err != nil {
 		return rpg.Skill{}, err
 	}
@@ -64,7 +64,7 @@ type ItemService struct{ repo port.ItemRepository }
 func NewItemService(repo port.ItemRepository) *ItemService { return &ItemService{repo: repo} }
 
 func (s *ItemService) CreateItem(ctx context.Context, in port.CreateItemInput) (rpg.Item, error) {
-	i, err := rpg.NewItem(in.Name, in.Description)
+	i, err := rpg.NewItem(in.Name, in.Description, in.Grade)
 	if err != nil {
 		return rpg.Item{}, err
 	}
@@ -135,7 +135,7 @@ func NewProfessionService(repo port.ProfessionRepository) *ProfessionService {
 }
 
 func (s *ProfessionService) CreateProfession(ctx context.Context, in port.CreateProfessionInput) (rpg.Profession, error) {
-	p, err := rpg.NewProfession(in.Name, in.Description)
+	p, err := rpg.NewProfession(in.Name, in.Description, in.Grade)
 	if err != nil {
 		return rpg.Profession{}, err
 	}
@@ -158,7 +158,7 @@ type ClassService struct{ repo port.ClassRepository }
 func NewClassService(repo port.ClassRepository) *ClassService { return &ClassService{repo: repo} }
 
 func (s *ClassService) CreateClass(ctx context.Context, in port.CreateClassInput) (rpg.Class, error) {
-	c, err := rpg.NewClass(in.Name, in.Description)
+	c, err := rpg.NewClass(in.Name, in.Description, in.Grade)
 	if err != nil {
 		return rpg.Class{}, err
 	}

@@ -65,10 +65,23 @@ type Character struct {
 	Stats   Stats   `yaml:"stats"`
 }
 
+// Grade defines a rarity level for items, skills, and abilities.
+type Grade struct {
+	Name            string  `yaml:"name"`
+	Level           int     `yaml:"level"`
+	PowerMultiplier float64 `yaml:"power_multiplier"`
+}
+
+// RPGDefaults holds config for the RPG mechanics.
+type RPGDefaults struct {
+	Grades []Grade `yaml:"grades"`
+}
+
 // Named is the common name+description shape of several catalog entities.
 type Named struct {
 	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
+	Grade       string `yaml:"grade"`
 }
 
 // Level is a sub-stage of a realm. It carries both progression concepts.
@@ -153,11 +166,18 @@ type Catalog struct {
 	Recipes     []Recipe    `yaml:"recipes"`
 }
 
+// SystemLog configures the author-facing system messages.
+type SystemLog struct {
+	Template string `yaml:"template"`
+}
+
 // Defaults is the whole defaults document.
 type Defaults struct {
-	World     World     `yaml:"world"`
-	Character Character `yaml:"character"`
-	Catalog   Catalog   `yaml:"catalog"`
+	World     World       `yaml:"world"`
+	Character Character   `yaml:"character"`
+	RPG       RPGDefaults `yaml:"rpg"`
+	Catalog   Catalog     `yaml:"catalog"`
+	SystemLog SystemLog   `yaml:"system_log"`
 }
 
 // Load decodes the embedded defaults, then applies the TGE_DEFAULTS override

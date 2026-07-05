@@ -21,22 +21,22 @@ func TestNewStats(t *testing.T) {
 }
 
 func TestNamedEntities(t *testing.T) {
-	if _, err := rpg.NewAbility("  ", ""); err != rpg.ErrInvalidAbilityName {
+	if _, err := rpg.NewAbility("  ", "", "Common"); err != rpg.ErrInvalidAbilityName {
 		t.Errorf("ability: got %v", err)
 	}
-	if _, err := rpg.NewSkill("", ""); err != rpg.ErrInvalidSkillName {
+	if _, err := rpg.NewSkill("", "", "Common"); err != rpg.ErrInvalidSkillName {
 		t.Errorf("skill: got %v", err)
 	}
-	if _, err := rpg.NewItem("", ""); err != rpg.ErrInvalidItemName {
+	if _, err := rpg.NewItem("", "", "Common"); err != rpg.ErrInvalidItemName {
 		t.Errorf("item: got %v", err)
 	}
-	if _, err := rpg.NewProfession("", ""); err != rpg.ErrInvalidProfessionName {
+	if _, err := rpg.NewProfession("", "", "Common"); err != rpg.ErrInvalidProfessionName {
 		t.Errorf("profession: got %v", err)
 	}
-	if _, err := rpg.NewClass("", ""); err != rpg.ErrInvalidClassName {
+	if _, err := rpg.NewClass("", "", "Common"); err != rpg.ErrInvalidClassName {
 		t.Errorf("class: got %v", err)
 	}
-	a, err := rpg.NewAbility(" Fireball ", " burns ")
+	a, err := rpg.NewAbility(" Fireball ", " burns ", "Common")
 	if err != nil || a.Name != "Fireball" || a.Description != "burns" {
 		t.Errorf("ability trim: %+v err=%v", a, err)
 	}

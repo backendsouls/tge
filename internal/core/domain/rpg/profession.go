@@ -8,17 +8,18 @@ import (
 // ErrInvalidProfessionName is returned when a profession name is blank.
 var ErrInvalidProfessionName = errors.New("profession: name must not be empty")
 
-// Profession is a character's vocation (e.g. Blacksmith, Alchemist).
+// Profession is a non-combat or specialized career path.
 type Profession struct {
 	Name        string
 	Description string
+	Grade       string
 }
 
 // NewProfession validates and builds a profession.
-func NewProfession(name, description string) (Profession, error) {
+func NewProfession(name, description, grade string) (Profession, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return Profession{}, ErrInvalidProfessionName
 	}
-	return Profession{Name: name, Description: strings.TrimSpace(description)}, nil
+	return Profession{Name: name, Description: strings.TrimSpace(description), Grade: strings.TrimSpace(grade)}, nil
 }

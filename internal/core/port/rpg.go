@@ -31,11 +31,11 @@ var (
 
 // Inputs.
 type (
-	CreateAbilityInput    struct{ Name, Description string }
-	CreateSkillInput      struct{ Name, Description string }
-	CreateItemInput       struct{ Name, Description string }
-	CreateProfessionInput struct{ Name, Description string }
-	CreateClassInput      struct{ Name, Description string }
+	CreateAbilityInput    struct{ Name, Description, Grade string }
+	CreateSkillInput      struct{ Name, Description, Grade string }
+	CreateItemInput       struct{ Name, Description, Grade string }
+	CreateProfessionInput struct{ Name, Description, Grade string }
+	CreateClassInput      struct{ Name, Description, Grade string }
 
 	CreateEffectInput struct {
 		Name        string

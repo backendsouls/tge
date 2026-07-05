@@ -12,6 +12,9 @@ world:
   realm: "Mortal Realm"
   power_system: "Spirit"   # the default cultivation
 
+system_log:
+  template: "[Ding! %s]"
+
 character:
   gender: "Male"
   age: 16
@@ -29,6 +32,15 @@ character:
     wis: 5
     cha: 5
     luk: 5
+
+rpg:
+  grades:
+    - { name: "Common", level: 1, power_multiplier: 1.0 }
+    - { name: "Uncommon", level: 2, power_multiplier: 1.2 }
+    - { name: "Rare", level: 3, power_multiplier: 1.5 }
+    - { name: "Epic", level: 4, power_multiplier: 2.0 }
+    - { name: "Legendary", level: 5, power_multiplier: 3.0 }
+    - { name: "Mythic", level: 6, power_multiplier: 5.0 }
 
 # Starter catalog: seeded into the store on startup if absent.
 catalog:
@@ -63,15 +75,15 @@ catalog:
     - { name: "Alchemist", description: "Brews pills and potions" }
 
   items:
-    - { name: "Gold", description: "Common currency" }
-    - { name: "Iron Sword", description: "A basic blade" }
-    - { name: "Spirit Herb", description: "A low-grade alchemy ingredient" }
+    - { name: "Gold", description: "Common currency", grade: "Common" }
+    - { name: "Iron Sword", description: "A basic blade", grade: "Common" }
+    - { name: "Spirit Herb", description: "A low-grade alchemy ingredient", grade: "Uncommon" }
 
   abilities:
-    - { name: "Berserk", description: "Trade defense for raw power" }
+    - { name: "Berserk", description: "Trade defense for raw power", grade: "Rare" }
 
   skills:
-    - { name: "Parry", description: "Deflect an incoming blow" }
+    - { name: "Parry", description: "Deflect an incoming blow", grade: "Common" }
 
   effects:
     - { name: "Poison", kind: "Status", description: "Damage over time" }
