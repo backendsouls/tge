@@ -1,0 +1,58 @@
+package sqlite
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+
+	"tge/internal/core/domain/{{DomainPackage}}"
+	"tge/internal/core/port"
+)
+
+// {{EntityName}}Repository implements port.{{EntityName}}Repository against a SQLite database.
+type {{EntityName}}Repository struct {
+	db *sql.DB
+}
+
+// New{{EntityName}}Repository creates a new SQLite repository for {{EntityName}}.
+func New{{EntityName}}Repository(db *sql.DB) *{{EntityName}}Repository {
+	return &{{EntityName}}Repository{db: db}
+}
+
+// Save inserts or updates a {{EntityName}}.
+func (r *{{EntityName}}Repository) Save(ctx context.Context, item {{DomainPackage}}.{{EntityName}}) error {
+	_, err := r.db.ExecContext(ctx, `INSERT INTO {{TableName}} (name, description, grade) VALUES (?, ?, ?)`,
+		item.Name, item.Description, item.Grade)
+	if err != nil {
+		if isUniqueConstraint(err) {
+			return port.Err{{EntityName}}Exists
+		}
+		return fmt.Errorf("save {{EntityName_lower}}: %w", err)
+	}
+	return nil
+}
+
+// FindByName retrieves a {{EntityName}} by its exact name.
+func (r *{{EntityName}}Repository) FindByName(ctx context.Context, name string) ({{DomainPackage}}.{{EntityName}}, error) {
+	var item {{DomainPackage}}.{{EntityName}}
+	err := r.db.QueryRowContext(ctx, `SELECT name, description, grade FROM {{TableName}} WHERE name = ?`, name).
+		Scan(&item.Name, &item.Description, &item.Grade)
+	if errors.Is(err, sql.ErrNoRows) {
+		return {{DomainPackage}}.{{EntityName}}{}, fmt.Errorf("%w: %q", port.Err{{EntityName}}NotFound, name)
+	}
+	if err != nil {
+		return {{DomainPackage}}.{{EntityName}}{}, fmt.Errorf("find {{EntityName_lower}}: %w", err)
+	}
+	return item, nil
+}
+
+// List returns all {{TableName}} sorted by name.
+func (r *{{EntityName}}Repository) List(ctx context.Context) ([]{{DomainPackage}}.{{EntityName}}, error) {
+	return queryList(ctx, r.db, `SELECT name, description, grade FROM {{TableName}} ORDER BY name`,
+		func(rows *sql.Rows) ({{DomainPackage}}.{{EntityName}}, error) {
+			var item {{DomainPackage}}.{{EntityName}}
+			err := rows.Scan(&item.Name, &item.Description, &item.Grade)
+			return item, err
+		})
+}

@@ -1,0 +1,25 @@
+package cli
+
+import (
+	"context"
+
+	"tge/internal/core/domain/{{DomainPackage}}"
+	"tge/internal/core/port"
+)
+
+// run{{EntityName}} maps CLI arguments to the {{EntityName}} Service using the generic command handler.
+func (a *App) run{{EntityName}}(ctx context.Context, args []string) int {
+	return runSimpleRPGCommand(a, ctx, args, "{{EntityName_lower}}", "{{TableName}}",
+		func(c context.Context, n, d, g string) ({{DomainPackage}}.{{EntityName}}, error) {
+			return a.rpg.{{PluralName}}.Create{{EntityName}}(c, port.Create{{EntityName}}Input{
+                Name: n, 
+                Description: d, 
+                Grade: g,
+            })
+		},
+		a.rpg.{{PluralName}}.List{{PluralName}},
+		a.rpg.{{PluralName}}.Get{{EntityName}},
+		func(i {{DomainPackage}}.{{EntityName}}) string { return i.Name },
+		func(i {{DomainPackage}}.{{EntityName}}) string { return i.Description },
+	)
+}

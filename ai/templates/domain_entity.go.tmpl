@@ -1,0 +1,29 @@
+package domain
+
+import (
+	"errors"
+	"strings"
+)
+
+// ErrInvalid{{EntityName}}Name is returned when a {{EntityName_lower}} name is blank.
+var ErrInvalid{{EntityName}}Name = errors.New("{{EntityName_lower}}: name must not be empty")
+
+// {{EntityName}} represents a standard RPG entity in the game.
+type {{EntityName}} struct {
+	Name        string
+	Description string
+	Grade       string
+}
+
+// New{{EntityName}} validates and builds a new {{EntityName}}.
+func New{{EntityName}}(name, description, grade string) ({{EntityName}}, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return {{EntityName}}{}, ErrInvalid{{EntityName}}Name
+	}
+	return {{EntityName}}{
+		Name:        name,
+		Description: strings.TrimSpace(description),
+		Grade:       strings.TrimSpace(grade),
+	}, nil
+}

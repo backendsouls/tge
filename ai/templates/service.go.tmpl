@@ -1,0 +1,39 @@
+package service
+
+import (
+	"context"
+
+	"tge/internal/core/domain/{{DomainPackage}}"
+	"tge/internal/core/port"
+)
+
+// {{EntityName}}Service orchestrates operations on {{EntityName}}s.
+type {{EntityName}}Service struct {
+	repo port.{{EntityName}}Repository
+}
+
+func New{{EntityName}}Service(repo port.{{EntityName}}Repository) *{{EntityName}}Service {
+	return &{{EntityName}}Service{repo: repo}
+}
+
+// Create{{EntityName}} validates input and persists a new {{EntityName}}.
+func (s *{{EntityName}}Service) Create{{EntityName}}(ctx context.Context, in port.Create{{EntityName}}Input) ({{DomainPackage}}.{{EntityName}}, error) {
+	entity, err := {{DomainPackage}}.New{{EntityName}}(in.Name, in.Description, in.Grade)
+	if err != nil {
+		return {{DomainPackage}}.{{EntityName}}{}, err
+	}
+	if err := s.repo.Save(ctx, entity); err != nil {
+		return {{DomainPackage}}.{{EntityName}}{}, err
+	}
+	return entity, nil
+}
+
+// Get{{EntityName}} fetches a specific {{EntityName}} by name.
+func (s *{{EntityName}}Service) Get{{EntityName}}(ctx context.Context, name string) ({{DomainPackage}}.{{EntityName}}, error) {
+	return s.repo.FindByName(ctx, name)
+}
+
+// List{{PluralName}} fetches all available {{PluralName}}.
+func (s *{{EntityName}}Service) List{{PluralName}}(ctx context.Context) ([]{{DomainPackage}}.{{EntityName}}, error) {
+	return s.repo.List(ctx)
+}

@@ -1,0 +1,21 @@
+package port
+
+import (
+	"context"
+
+	"tge/internal/core/domain/{{DomainPackage}}"
+)
+
+// Create{{EntityName}}Input is the input struct for creating a new {{EntityName}}.
+type Create{{EntityName}}Input struct {
+	Name        string
+	Description string
+	Grade       string
+}
+
+// {{EntityName}}Repository defines the persistence interface for {{EntityName}}s.
+type {{EntityName}}Repository interface {
+	Save(context.Context, {{DomainPackage}}.{{EntityName}}) error
+	FindByName(ctx context.Context, name string) ({{DomainPackage}}.{{EntityName}}, error)
+	List(context.Context) ([]{{DomainPackage}}.{{EntityName}}, error)
+}
