@@ -1,0 +1,71 @@
+{
+  "Name": "Klein Moretti",
+  "Type": "MainCharacter",
+  "Gender": "Male",
+  "Species": [
+    {
+      "Name": "Human",
+      "Power": 1,
+      "Lifespan": 80,
+      "DefaultGender": ""
+    }
+  ],
+  "PowerValue": "210",
+  "MechanicState": {
+    "Tier": 9,
+    "BasePower": 10,
+    "IsAwakened": true,
+    "Alignment": 10,
+    "EnergyPools": {
+      "Spirituality": 300
+    },
+    "SpellSlots": {},
+    "PermanentTraits": [
+      "Spirit Vision"
+    ],
+    "Vows": []
+  },
+  "UnlockedNodes": [
+    {
+      "System": "Lord of the Mysteries",
+      "NodeID": "sequence_9_seer",
+      "Level": 1,
+      "Progress": 100,
+      "BasePower": 200
+    }
+  ],
+  "Mortal": {
+    "Age": 22,
+    "Lifespan": 80
+  },
+  "Class": {
+    "Name": "Beyonder",
+    "Description": ""
+  },
+  "Profession": {
+    "Name": "Nighthawk",
+    "Description": ""
+  },
+  "Stats": {
+    "STR": 10,
+    "AGI": 15,
+    "INT": 80,
+    "VIT": 12,
+    "DEX": 25,
+    "WIS": 60,
+    "CHA": 30,
+    "LUK": 40
+  },
+  "Inventory": {
+    "Items": [
+      {
+        "Item": "Gold Pound",
+        "Quantity": 4
+      },
+      {
+        "Item": "Revolver",
+        "Quantity": 1
+      }
+    ]
+  }
+}

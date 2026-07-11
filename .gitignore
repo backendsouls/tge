@@ -2,6 +2,7 @@
 /tge
 /tge_cli
 *.exe
+/bin/
 
 # SQLite databases
 *.db

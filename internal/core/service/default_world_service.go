@@ -6,7 +6,7 @@ import (
 
 	"tge/internal/core/domain/character"
 	"tge/internal/core/domain/cosmology"
-	"tge/internal/core/domain/progression"
+	"tge/internal/core/domain/powersystem"
 	"tge/internal/core/port"
 )
 
@@ -111,7 +111,11 @@ func (s *DefaultWorldService) EnsureDefaults(ctx context.Context) (port.DefaultW
 		return port.DefaultWorld{}, err
 	}
 
-	if err := ignoreExists(s.systems.Create(ctx, n.PowerSystem), port.ErrPowerSystemExists); err != nil {
+	ps, err := powersystem.NewPowerSystem(n.PowerSystem, powersystem.Cultivation)
+	if err != nil {
+		return port.DefaultWorld{}, err
+	}
+	if err := ignoreExists(s.systems.Save(ctx, ps), port.ErrPowerSystemExists); err != nil {
 		return port.DefaultWorld{}, err
 	}
 
@@ -122,7 +126,7 @@ func (s *DefaultWorldService) EnsureDefaults(ctx context.Context) (port.DefaultW
 	// fixed defaults is itself idempotent.
 	u := cosmology.Universe{
 		Name:    n.Universe,
-		Systems: []progression.PowerSystem{{Name: n.PowerSystem}},
+		Systems: []powersystem.PowerSystem{{Name: n.PowerSystem}},
 		Realms:  []cosmology.Location{{Name: n.Realm}},
 	}
 	if err := s.universes.SaveSystems(ctx, u); err != nil {

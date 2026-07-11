@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"tge/internal/adapter/sqlite"
-	"tge/internal/core/domain/progression"
+	"tge/internal/core/domain/cultivation"
 	"tge/internal/core/port"
 )
 
@@ -24,9 +24,9 @@ func newRepo(t *testing.T) *sqlite.RealmRepository {
 	return repo
 }
 
-func sampleRealm(t *testing.T, name string) progression.Realm {
+func sampleRealm(t *testing.T, name string) cultivation.Realm {
 	t.Helper()
-	r, err := progression.NewRealm(progression.RealmConfig{
+	r, err := cultivation.NewRealm(cultivation.RealmConfig{
 		Name:               name,
 		PowerMultiplier:    2,
 		PowerAdder:         10,

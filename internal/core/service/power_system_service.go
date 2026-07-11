@@ -2,55 +2,91 @@ package service
 
 import (
 	"context"
+	"sync"
 
-	"tge/internal/core/domain/progression"
+	"tge/internal/core/domain/powersystem"
 	"tge/internal/core/port"
 )
 
-// PowerSystemService implements port.PowerSystemService, building power trees on
-// top of a PowerSystemRepository.
 type PowerSystemService struct {
 	repo port.PowerSystemRepository
+	mu   sync.Mutex
 }
 
-// NewPowerSystemService wires the service to its repository.
 func NewPowerSystemService(repo port.PowerSystemRepository) *PowerSystemService {
 	return &PowerSystemService{repo: repo}
 }
 
-// CreateSystem validates the name and persists a new empty system.
-func (s *PowerSystemService) CreateSystem(ctx context.Context, name string, kind progression.PowerSystemType) (progression.PowerSystem, error) {
-	ps, err := progression.NewPowerSystem(name, kind)
+func (s *PowerSystemService) CreateSystem(ctx context.Context, name string, kind powersystem.PowerSystemType) (powersystem.PowerSystem, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	ps, err := powersystem.NewPowerSystem(name, kind)
 	if err != nil {
-		return progression.PowerSystem{}, err
+		return powersystem.PowerSystem{}, err
 	}
-	if err := s.repo.Create(ctx, ps.Name); err != nil {
-		return progression.PowerSystem{}, err
+
+	// Check if it already exists to emulate SQL UNIQUE constraint
+	if _, err := s.repo.FindByName(ctx, ps.Name); err == nil {
+		return powersystem.PowerSystem{}, port.ErrPowerSystemExists
+	}
+
+	if err := s.repo.Save(ctx, ps); err != nil {
+		return powersystem.PowerSystem{}, err
 	}
 	return ps, nil
 }
 
-// AddPower loads the system, adds the power to its tree and persists it.
-func (s *PowerSystemService) AddPower(ctx context.Context, in port.AddPowerInput) (progression.PowerSystem, error) {
+func (s *PowerSystemService) AddNode(ctx context.Context, in port.AddNodeInput) (powersystem.PowerSystem, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	ps, err := s.repo.FindByName(ctx, in.System)
 	if err != nil {
-		return progression.PowerSystem{}, err
+		return powersystem.PowerSystem{}, err
 	}
-	if err := ps.AddPower(in.Name, in.Parent); err != nil {
-		return progression.PowerSystem{}, err
+
+	node, err := powersystem.NewPowerNode(in.Name, in.Category, in.Tags)
+	if err != nil {
+		return powersystem.PowerSystem{}, err
 	}
-	if err := s.repo.SavePowers(ctx, ps); err != nil {
-		return progression.PowerSystem{}, err
+	if in.NodeID != "" {
+		node.ID = in.NodeID
+	}
+
+	if err := ps.AddNode(&node); err != nil {
+		return powersystem.PowerSystem{}, err
+	}
+
+	if err := s.repo.Save(ctx, ps); err != nil {
+		return powersystem.PowerSystem{}, err
 	}
 	return ps, nil
 }
 
-// GetSystem returns a single system with its power tree.
-func (s *PowerSystemService) GetSystem(ctx context.Context, name string) (progression.PowerSystem, error) {
+func (s *PowerSystemService) AddEdge(ctx context.Context, in port.AddEdgeInput) (powersystem.PowerSystem, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	ps, err := s.repo.FindByName(ctx, in.System)
+	if err != nil {
+		return powersystem.PowerSystem{}, err
+	}
+
+	if err := ps.AddEdge(in.NodeID, in.TargetID, in.EdgeType); err != nil {
+		return powersystem.PowerSystem{}, err
+	}
+
+	if err := s.repo.Save(ctx, ps); err != nil {
+		return powersystem.PowerSystem{}, err
+	}
+	return ps, nil
+}
+
+func (s *PowerSystemService) GetSystem(ctx context.Context, name string) (powersystem.PowerSystem, error) {
 	return s.repo.FindByName(ctx, name)
 }
 
-// ListSystems returns all systems.
-func (s *PowerSystemService) ListSystems(ctx context.Context) ([]progression.PowerSystem, error) {
+func (s *PowerSystemService) ListSystems(ctx context.Context) ([]powersystem.PowerSystem, error) {
 	return s.repo.List(ctx)
 }

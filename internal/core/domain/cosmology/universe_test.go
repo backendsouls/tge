@@ -4,7 +4,7 @@ import (
 	"errors"
 	"reflect"
 	"testing"
-	"tge/internal/core/domain/progression"
+	"tge/internal/core/domain/powersystem"
 )
 
 func TestNewUniverse(t *testing.T) {
@@ -32,30 +32,30 @@ func TestNewUniverse(t *testing.T) {
 func TestUniverse_AddSystem(t *testing.T) {
 	t.Run("adds power systems by name", func(t *testing.T) {
 		u, _ := NewUniverse("Universe A")
-		if err := u.AddSystem("progression.Cultivation"); err != nil {
+		if err := u.AddSystem("powersystem.Cultivation"); err != nil {
 			t.Fatalf("add: %v", err)
 		}
 		if err := u.AddSystem("Sorcery"); err != nil {
 			t.Fatalf("add: %v", err)
 		}
 		got := []string{u.Systems[0].Name, u.Systems[1].Name}
-		if !reflect.DeepEqual(got, []string{"progression.Cultivation", "Sorcery"}) {
-			t.Errorf("systems = %v, want [progression.Cultivation Sorcery]", got)
+		if !reflect.DeepEqual(got, []string{"powersystem.Cultivation", "Sorcery"}) {
+			t.Errorf("systems = %v, want [powersystem.Cultivation Sorcery]", got)
 		}
 	})
 
 	t.Run("rejects a duplicate within the universe", func(t *testing.T) {
 		u, _ := NewUniverse("Universe A")
-		_ = u.AddSystem("progression.Cultivation")
-		if err := u.AddSystem("progression.Cultivation"); !errors.Is(err, ErrUniverseSystemExists) {
+		_ = u.AddSystem("powersystem.Cultivation")
+		if err := u.AddSystem("powersystem.Cultivation"); !errors.Is(err, ErrUniverseSystemExists) {
 			t.Fatalf("err = %v, want %v", err, ErrUniverseSystemExists)
 		}
 	})
 
 	t.Run("rejects a blank system name", func(t *testing.T) {
 		u, _ := NewUniverse("Universe A")
-		if err := u.AddSystem("  "); !errors.Is(err, progression.ErrInvalidSystemName) {
-			t.Fatalf("err = %v, want %v", err, progression.ErrInvalidSystemName)
+		if err := u.AddSystem("  "); !errors.Is(err, powersystem.ErrInvalidSystemName) {
+			t.Fatalf("err = %v, want %v", err, powersystem.ErrInvalidSystemName)
 		}
 	})
 }
@@ -63,11 +63,11 @@ func TestUniverse_AddSystem(t *testing.T) {
 func TestUniverse_AddRealms(t *testing.T) {
 	t.Run("adds two or more realms", func(t *testing.T) {
 		u, _ := NewUniverse("Universe A")
-		if err := u.AddRealms("Hell progression.Realm", "character.Mortal progression.Realm", "Heaven progression.Realm"); err != nil {
+		if err := u.AddRealms("Hell cultivation.Realm", "character.Mortal cultivation.Realm", "Heaven cultivation.Realm"); err != nil {
 			t.Fatalf("add realms: %v", err)
 		}
 		got := []string{u.Realms[0].Name, u.Realms[1].Name, u.Realms[2].Name}
-		want := []string{"Hell progression.Realm", "character.Mortal progression.Realm", "Heaven progression.Realm"}
+		want := []string{"Hell cultivation.Realm", "character.Mortal cultivation.Realm", "Heaven cultivation.Realm"}
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("realms = %v, want %v", got, want)
 		}
@@ -75,18 +75,18 @@ func TestUniverse_AddRealms(t *testing.T) {
 
 	t.Run("allows a single bubble realm", func(t *testing.T) {
 		u, _ := NewUniverse("Universe A")
-		if err := u.AddRealms("Pocket progression.Realm"); err != nil {
+		if err := u.AddRealms("Pocket cultivation.Realm"); err != nil {
 			t.Fatalf("add single realm: %v", err)
 		}
-		if len(u.Realms) != 1 || u.Realms[0].Name != "Pocket progression.Realm" {
-			t.Errorf("realms = %+v, want one Pocket progression.Realm", u.Realms)
+		if len(u.Realms) != 1 || u.Realms[0].Name != "Pocket cultivation.Realm" {
+			t.Errorf("realms = %+v, want one Pocket cultivation.Realm", u.Realms)
 		}
 	})
 
 	t.Run("allows adding more incrementally", func(t *testing.T) {
 		u, _ := NewUniverse("Universe A")
-		_ = u.AddRealms("Hell progression.Realm", "character.Mortal progression.Realm")
-		if err := u.AddRealms("Heaven progression.Realm"); err != nil {
+		_ = u.AddRealms("Hell cultivation.Realm", "character.Mortal cultivation.Realm")
+		if err := u.AddRealms("Heaven cultivation.Realm"); err != nil {
 			t.Fatalf("add third realm: %v", err)
 		}
 		if len(u.Realms) != 3 {
@@ -96,13 +96,13 @@ func TestUniverse_AddRealms(t *testing.T) {
 
 	t.Run("rejects duplicates", func(t *testing.T) {
 		u, _ := NewUniverse("Universe A")
-		_ = u.AddRealms("Hell progression.Realm", "character.Mortal progression.Realm")
-		if err := u.AddRealms("Hell progression.Realm"); !errors.Is(err, ErrRealmExistsInUniverse) {
+		_ = u.AddRealms("Hell cultivation.Realm", "character.Mortal cultivation.Realm")
+		if err := u.AddRealms("Hell cultivation.Realm"); !errors.Is(err, ErrRealmExistsInUniverse) {
 			t.Fatalf("err = %v, want %v", err, ErrRealmExistsInUniverse)
 		}
 		// Also rejects duplicates within the same call.
 		u2, _ := NewUniverse("Universe B")
-		if err := u2.AddRealms("Hell progression.Realm", "Hell progression.Realm"); !errors.Is(err, ErrRealmExistsInUniverse) {
+		if err := u2.AddRealms("Hell cultivation.Realm", "Hell cultivation.Realm"); !errors.Is(err, ErrRealmExistsInUniverse) {
 			t.Fatalf("err = %v, want %v", err, ErrRealmExistsInUniverse)
 		}
 	})

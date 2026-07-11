@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"tge/internal/adapter/cli"
+	"tge/internal/adapter/file"
 	"tge/internal/adapter/sqlite"
 	"tge/internal/config"
 	"tge/internal/core/domain/character"
@@ -43,11 +44,7 @@ func run() int {
 	}
 	defer closeRepo(realmRepo)
 
-	psRepo, err := sqlite.NewPowerSystemRepository(dbPath)
-	if err != nil {
-		return fail(err)
-	}
-	defer closeRepo(psRepo)
+	psRepo := file.NewPowerSystemRepository("data/power_systems")
 
 	universeRepo, err := sqlite.NewUniverseRepository(dbPath)
 	if err != nil {
@@ -55,11 +52,7 @@ func run() int {
 	}
 	defer closeRepo(universeRepo)
 
-	charRepo, err := sqlite.NewCharacterRepository(dbPath)
-	if err != nil {
-		return fail(err)
-	}
-	defer closeRepo(charRepo)
+	charRepo := file.NewCharacterRepository("data/characters")
 
 	novelRepo, err := sqlite.NewNovelRepository(dbPath)
 	if err != nil {

@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"tge/internal/core/domain/progression"
+	"tge/internal/core/domain/cultivation"
 	"tge/internal/core/port"
 
 	sqlitedrv "modernc.org/sqlite" // registers the "sqlite" database/sql driver
@@ -36,7 +36,7 @@ func (r *RealmRepository) Close() error {
 }
 
 // Save inserts a realm, returning port.ErrRealmExists if the name is taken.
-func (r *RealmRepository) Save(ctx context.Context, realm progression.Realm) error {
+func (r *RealmRepository) Save(ctx context.Context, realm cultivation.Realm) error {
 	const q = `
 INSERT INTO realms (
 	name, power_multiplier, power_adder,
@@ -62,7 +62,7 @@ INSERT INTO realms (
 }
 
 // FindByName returns the named realm or port.ErrRealmNotFound.
-func (r *RealmRepository) FindByName(ctx context.Context, name string) (progression.Realm, error) {
+func (r *RealmRepository) FindByName(ctx context.Context, name string) (cultivation.Realm, error) {
 	const q = `
 SELECT name, power_multiplier, power_adder,
        lifespan_multiplier, lifespan_adder,
@@ -71,27 +71,27 @@ FROM realms WHERE name = ?`
 
 	realm, err := scanRealm(r.db.QueryRowContext(ctx, q, name))
 	if errors.Is(err, sql.ErrNoRows) {
-		return progression.Realm{}, fmt.Errorf("%w: %q", port.ErrRealmNotFound, name)
+		return cultivation.Realm{}, fmt.Errorf("%w: %q", port.ErrRealmNotFound, name)
 	}
 	if err != nil {
-		return progression.Realm{}, fmt.Errorf("find realm: %w", err)
+		return cultivation.Realm{}, fmt.Errorf("find realm: %w", err)
 	}
 	if err := r.loadLevels(ctx, &realm); err != nil {
-		return progression.Realm{}, err
+		return cultivation.Realm{}, err
 	}
 	return realm, nil
 }
 
 // AddLevel inserts an ordered level into a realm, returning
-// progression.ErrLevelNumberExists if the number is already used there.
-func (r *RealmRepository) AddLevel(ctx context.Context, realm string, l progression.Level) error {
+// cultivation.ErrLevelNumberExists if the number is already used there.
+func (r *RealmRepository) AddLevel(ctx context.Context, realm string, l cultivation.Level) error {
 	const q = `INSERT INTO realm_levels (realm, number, name, breakthrough_points, bottleneck_points) VALUES (?, ?, ?, ?, ?)`
 	_, err := r.db.ExecContext(ctx, q, realm, l.Number, l.Name, l.BreakthroughPoints, l.BottleneckPoints)
 	if err != nil {
 		if serr, ok := errors.AsType[*sqlitedrv.Error](err); ok {
 			switch serr.Code() {
 			case sqlitelib.SQLITE_CONSTRAINT_PRIMARYKEY, sqlitelib.SQLITE_CONSTRAINT_UNIQUE:
-				return fmt.Errorf("%w: %d", progression.ErrLevelNumberExists, l.Number)
+				return fmt.Errorf("%w: %d", cultivation.ErrLevelNumberExists, l.Number)
 			}
 		}
 		return fmt.Errorf("add realm level: %w", err)
@@ -100,7 +100,7 @@ func (r *RealmRepository) AddLevel(ctx context.Context, realm string, l progress
 }
 
 // loadLevels populates a realm's levels ordered by number.
-func (r *RealmRepository) loadLevels(ctx context.Context, realm *progression.Realm) error {
+func (r *RealmRepository) loadLevels(ctx context.Context, realm *cultivation.Realm) error {
 	rows, err := r.db.QueryContext(ctx,
 		`SELECT number, name, breakthrough_points, bottleneck_points FROM realm_levels WHERE realm = ? ORDER BY number`, realm.Name)
 	if err != nil {
@@ -110,7 +110,7 @@ func (r *RealmRepository) loadLevels(ctx context.Context, realm *progression.Rea
 
 	realm.Levels = nil
 	for rows.Next() {
-		var l progression.Level
+		var l cultivation.Level
 		if err := rows.Scan(&l.Number, &l.Name, &l.BreakthroughPoints, &l.BottleneckPoints); err != nil {
 			return fmt.Errorf("scan realm level: %w", err)
 		}
@@ -120,7 +120,7 @@ func (r *RealmRepository) loadLevels(ctx context.Context, realm *progression.Rea
 }
 
 // List returns all realms ordered by name.
-func (r *RealmRepository) List(ctx context.Context) ([]progression.Realm, error) {
+func (r *RealmRepository) List(ctx context.Context) ([]cultivation.Realm, error) {
 	const q = `
 SELECT name, power_multiplier, power_adder,
        lifespan_multiplier, lifespan_adder,
@@ -133,7 +133,7 @@ FROM realms ORDER BY tier, name`
 	}
 	defer func() { _ = rows.Close() }()
 
-	var realms []progression.Realm
+	var realms []cultivation.Realm
 	for rows.Next() {
 		realm, err := scanRealm(rows)
 		if err != nil {
@@ -157,8 +157,8 @@ type scanner interface {
 	Scan(dest ...any) error
 }
 
-func scanRealm(s scanner) (progression.Realm, error) {
-	var realm progression.Realm
+func scanRealm(s scanner) (cultivation.Realm, error) {
+	var realm cultivation.Realm
 	err := s.Scan(
 		&realm.Name, &realm.PowerMultiplier, &realm.PowerAdder,
 		&realm.LifespanMultiplier, &realm.LifespanAdder,

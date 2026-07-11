@@ -9,9 +9,9 @@ import (
 var ErrInvalidLocationName = errors.New("location: name must not be empty")
 
 // Location is a "realm" in the in-universe sense: a named place within a universe
-// (e.g. "Hell progression.Realm", "character.Mortal progression.Realm", "Heaven progression.Realm").
+// (e.g. "Hell cultivation.Realm", "character.Mortal cultivation.Realm", "Heaven cultivation.Realm").
 //
-// It is distinct from and unrelated to the cultivation progression.Realm, which is a power
+// It is distinct from and unrelated to the cultivation cultivation.Realm, which is a power
 // layer (ax+b). They merely share the word "realm".
 type Location struct {
 	Name string

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"tge/internal/core/domain/character"
-	"tge/internal/core/domain/progression"
 )
 
 var (
@@ -12,21 +11,14 @@ var (
 	ErrCharacterNotFound = errors.New("character: not found")
 	// ErrCharacterExists is returned when saving a character whose name is taken.
 	ErrCharacterExists = errors.New("character: already exists")
-	// ErrInvalidTrainingPoints is returned when training with non-positive points.
-	ErrInvalidTrainingPoints = errors.New("cultivation: training points must be positive")
-	// ErrNoRealms is returned when a fresh cultivation has no realms to start in.
-	ErrNoRealms = errors.New("cultivation: no realms available to cultivate in")
 )
 
-// CreateCharacterInput describes the mortal character to create. Type and Gender
-// are validated by the domain; each named system must already exist, as must a
-// given Class or Profession (both optional).
+// CreateCharacterInput describes the mortal character to create.
 type CreateCharacterInput struct {
 	Name       string
 	Type       string
 	Gender     string
 	Species    string
-	Systems    []string
 	Class      string
 	Profession string
 }
@@ -38,82 +30,23 @@ type GiveItemInput struct {
 	Quantity  int
 }
 
-// CultivateInput sets (or replaces) a character's cultivation state at one power
-// node. System defaults to the character's first power system and Path to the
-// System name; the state is anchored to the given Realm and Level.
-type CultivateInput struct {
-	Character          string
-	System             string
-	Path               string
-	Realm              string
-	LevelNumber        int
-	LevelName          string
-	BreakthroughPoints int // the level's breakthrough threshold
-	BottleneckPoints   int // the level's bottleneck threshold
-	Points             int // accumulated breakthrough progress
-	Bottleneck         int // accumulated bottleneck progress
-	Progress           float64
-}
-
-// TrainInput adds cultivation points to a character's power node, filling the
-// current level's breakthrough then bottleneck gate and advancing through levels
-// and realms. System defaults to the character's first power system and Path to
-// the System name. Realms is the tier-ordered realm sequence (with levels) the
-// caller supplies so the use case can advance across realms.
-type TrainInput struct {
+// TrainNodeInput requests progression on a specific PowerNode in a PowerSystem.
+type TrainNodeInput struct {
 	Character string
 	System    string
-	Path      string
-	Points    int
-	Realms    []progression.Realm
-}
-
-// CultivationRecord is one persisted cultivation entry for a character: the
-// progress at a single (System, Path) node.
-type CultivationRecord struct {
-	System             string
-	Path               string
-	Realm              string
-	LevelNumber        int
-	LevelName          string
-	BreakthroughPoints int
-	BottleneckPoints   int
-	Points             int
-	Bottleneck         int
-	Progress           float64
-}
-
-// AwakenSuperPowerInput sets a character's superpower tier.
-type AwakenSuperPowerInput struct {
-	Character string
-	System    string
-	Path      string
-	Tier      int
-}
-
-// SuperPowerRecord is one persisted superpower entry for a character.
-type SuperPowerRecord struct {
-	System string
-	Path   string
-	Tier   int
+	NodeID    string
 }
 
 // CharacterRepository is a driven port persisting characters keyed by name.
+// Thanks to aggregate-root serialization (Flat Files/JSON), we only need high-level Save/Find operations.
 type CharacterRepository interface {
 	Save(ctx context.Context, c character.Character) error
 	FindByName(ctx context.Context, name string) (character.Character, error)
 	// MainCharacters returns every main-character-typed character, ordered by name.
 	MainCharacters(ctx context.Context) ([]character.Character, error)
 	List(ctx context.Context) ([]character.Character, error)
-	// AddItem adds quantity of an item to a character's inventory, merging with
-	// any existing stack of the same item.
-	AddItem(ctx context.Context, character, item string, quantity int) error
-	// SaveCultivation sets (upserts) a character's cultivation state at one
-	// (System, Path) node.
-	UpdatePowerValue(ctx context.Context, name string, power string) error
-	SaveCultivation(ctx context.Context, character string, rec CultivationRecord) error
-	// SaveSuperPower sets (upserts) a character's superpower state.
-	SaveSuperPower(ctx context.Context, character string, rec SuperPowerRecord) error
+	// Clean soft deletes all characters.
+	Clean(ctx context.Context) error
 }
 
 // CharacterService is a driving port for character use cases.
@@ -122,13 +55,12 @@ type CharacterService interface {
 	MainCharacter(ctx context.Context) (character.Character, error)
 	Character(ctx context.Context, name string) (character.Character, error)
 	ListCharacters(ctx context.Context) ([]character.Character, error)
+	CleanCharacters(ctx context.Context) error
 	GiveItem(ctx context.Context, in GiveItemInput) (character.Character, error)
-	// Cultivate sets a character's cultivation state at a power node and returns
-	// the updated character.
-	Cultivate(ctx context.Context, in CultivateInput) (character.Character, error)
-	// Train adds cultivation points to a character's power node, advancing its
-	// level (and realm) as the breakthrough and bottleneck gates fill.
-	Train(ctx context.Context, in TrainInput) (character.Character, error)
-	// AwakenSuperPower sets a character's superpower tier at a power node.
-	AwakenSuperPower(ctx context.Context, in AwakenSuperPowerInput) (character.Character, error)
+
+	// TrainNode attempts to progress or unlock a node within a character's power system graph.
+	TrainNode(ctx context.Context, in TrainNodeInput) (character.Character, error)
+
+	AssignIdleActivity(ctx context.Context, charName string, activity string) (character.Character, error)
+	PassTime(ctx context.Context, charName string, seconds int64) (character.Character, error)
 }

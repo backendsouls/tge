@@ -1,0 +1,63 @@
+{
+  "Name": "Bob",
+  "Type": "MainCharacter",
+  "Gender": "Male",
+  "Species": [
+    {
+      "Name": "Human",
+      "Power": 1,
+      "Lifespan": 80,
+      "DefaultGender": "Male"
+    }
+  ],
+  "PowerValue": "1",
+  "MechanicState": {
+    "Tier": 0,
+    "BasePower": 1,
+    "IsAwakened": false,
+    "Alignment": 0,
+    "EnergyPools": {},
+    "SpellSlots": {},
+    "PermanentTraits": [],
+    "Vows": []
+  },
+  "UnlockedNodes": [],
+  "Mortal": {
+    "Age": 16,
+    "Lifespan": 80
+  },
+  "Class": {
+    "Name": "",
+    "Description": "",
+    "Grade": ""
+  },
+  "Profession": {
+    "Name": "",
+    "Description": "",
+    "Grade": ""
+  },
+  "Stats": {
+    "STR": 5,
+    "AGI": 5,
+    "INT": 5,
+    "VIT": 5,
+    "DEX": 5,
+    "WIS": 5,
+    "CHA": 5,
+    "LUK": 5
+  },
+  "Inventory": {
+    "Items": null
+  },
+  "IdleState": {
+    "start_time": 0,
+    "active_activity": "secluded_cultivation",
+    "rates": {
+      "skill_points_per_hour": 0,
+      "cultivation_points_per_hour": 100,
+      "ability_points_per_hour": 0,
+      "profession_points_per_hour": 0
+    }
+  },
+  "NovelTime": 2592000
+}

@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"tge/internal/core/domain/cosmology"
-	"tge/internal/core/domain/progression"
+	"tge/internal/core/domain/powersystem"
 	"tge/internal/core/port"
 
 	sqlitedrv "modernc.org/sqlite"
@@ -193,7 +193,7 @@ func (r *UniverseRepository) loadSystems(ctx context.Context, u *cosmology.Unive
 		if err := rows.Scan(&system); err != nil {
 			return fmt.Errorf("scan universe system: %w", err)
 		}
-		u.Systems = append(u.Systems, progression.PowerSystem{Name: system})
+		u.Systems = append(u.Systems, powersystem.PowerSystem{Name: system})
 	}
 	if err := rows.Err(); err != nil {
 		return fmt.Errorf("iterate universe systems: %w", err)

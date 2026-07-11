@@ -1,0 +1,24 @@
+{
+  "Name": "Reiatsu",
+  "Type": "Magic",
+  "Nodes": {
+    "shinigami": {
+      "ID": "shinigami",
+      "Name": "Shinigami",
+      "Category": "Soul Reaper",
+      "Tags": ["sword", "spirit"],
+      "Parents": [],
+      "MutuallyExclusive": [],
+      "BasePower": 1000
+    },
+    "bankai": {
+      "ID": "bankai",
+      "Name": "Bankai",
+      "Category": "Soul Reaper",
+      "Tags": ["sword", "spirit", "ultimate"],
+      "Parents": ["shinigami"],
+      "MutuallyExclusive": [],
+      "BasePower": 10000
+    }
+  }
+}

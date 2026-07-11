@@ -1,0 +1,71 @@
+{
+  "Name": "Goku",
+  "Type": "MainCharacter",
+  "Gender": "Male",
+  "Species": [
+    {
+      "Name": "Saiyan",
+      "Power": 10,
+      "Lifespan": 100,
+      "DefaultGender": ""
+    }
+  ],
+  "PowerValue": "100",
+  "MechanicState": {
+    "Tier": 1,
+    "BasePower": 10,
+    "IsAwakened": true,
+    "Alignment": 50,
+    "EnergyPools": {
+      "Ki": 500
+    },
+    "SpellSlots": {},
+    "PermanentTraits": [
+      "Zenkai Boost"
+    ],
+    "Vows": []
+  },
+  "UnlockedNodes": [
+    {
+      "System": "Ki",
+      "NodeID": "martial_artist",
+      "Level": 1,
+      "Progress": 50,
+      "BasePower": 50
+    }
+  ],
+  "Mortal": {
+    "Age": 24,
+    "Lifespan": 100
+  },
+  "Class": {
+    "Name": "Martial Artist",
+    "Description": ""
+  },
+  "Profession": {
+    "Name": "Fighter",
+    "Description": ""
+  },
+  "Stats": {
+    "STR": 50,
+    "AGI": 40,
+    "INT": 10,
+    "VIT": 45,
+    "DEX": 35,
+    "WIS": 15,
+    "CHA": 20,
+    "LUK": 50
+  },
+  "Inventory": {
+    "Items": [
+      {
+        "Item": "Senzu Bean",
+        "Quantity": 3
+      },
+      {
+        "Item": "Power Pole",
+        "Quantity": 1
+      }
+    ]
+  }
+}

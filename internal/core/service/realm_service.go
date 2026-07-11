@@ -7,7 +7,7 @@ package service
 import (
 	"context"
 
-	"tge/internal/core/domain/progression"
+	"tge/internal/core/domain/cultivation"
 	"tge/internal/core/port"
 )
 
@@ -23,44 +23,44 @@ func NewRealmService(repo port.RealmRepository) *RealmService {
 }
 
 // AddRealm validates the config via the domain and persists the resulting realm.
-func (s *RealmService) AddRealm(ctx context.Context, cfg progression.RealmConfig) (progression.Realm, error) {
-	r, err := progression.NewRealm(cfg)
+func (s *RealmService) AddRealm(ctx context.Context, cfg cultivation.RealmConfig) (cultivation.Realm, error) {
+	r, err := cultivation.NewRealm(cfg)
 	if err != nil {
-		return progression.Realm{}, err
+		return cultivation.Realm{}, err
 	}
 	if err := s.repo.Save(ctx, r); err != nil {
-		return progression.Realm{}, err
+		return cultivation.Realm{}, err
 	}
 	return r, nil
 }
 
 // ListRealms returns all persisted realms.
-func (s *RealmService) ListRealms(ctx context.Context) ([]progression.Realm, error) {
+func (s *RealmService) ListRealms(ctx context.Context) ([]cultivation.Realm, error) {
 	return s.repo.List(ctx)
 }
 
 // GetRealm returns a single realm (with its levels) by name.
-func (s *RealmService) GetRealm(ctx context.Context, name string) (progression.Realm, error) {
+func (s *RealmService) GetRealm(ctx context.Context, name string) (cultivation.Realm, error) {
 	return s.repo.FindByName(ctx, name)
 }
 
 // AddLevel validates and adds an ordered level to an existing realm.
-func (s *RealmService) AddLevel(ctx context.Context, in port.AddLevelInput) (progression.Realm, error) {
+func (s *RealmService) AddLevel(ctx context.Context, in port.AddLevelInput) (cultivation.Realm, error) {
 	r, err := s.repo.FindByName(ctx, in.Realm)
 	if err != nil {
-		return progression.Realm{}, err
+		return cultivation.Realm{}, err
 	}
 	if err := r.AddLevel(in.Number, in.Name, in.BreakthroughPoints, in.BottleneckPoints); err != nil {
-		return progression.Realm{}, err
+		return cultivation.Realm{}, err
 	}
-	level := progression.Level{
+	level := cultivation.Level{
 		Number:             in.Number,
 		Name:               in.Name,
 		BreakthroughPoints: in.BreakthroughPoints,
 		BottleneckPoints:   in.BottleneckPoints,
 	}
 	if err := s.repo.AddLevel(ctx, in.Realm, level); err != nil {
-		return progression.Realm{}, err
+		return cultivation.Realm{}, err
 	}
 	return r, nil
 }

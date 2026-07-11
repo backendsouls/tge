@@ -87,20 +87,38 @@ func (a *App) runClass(ctx context.Context, args []string) int {
 
 // --- Effect ---
 
+const effectHelp = `tge effect — Manage effects
+
+Usage:
+  tge effect <command> [arguments]
+
+Commands:
+  create       Create a new effect
+  list         List all effects
+  show         Show details of an effect
+`
+
 func (a *App) runEffect(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		_, _ = fmt.Fprintln(a.err, "usage: tge effect <add|list|show>")
+		_, _ = fmt.Fprint(a.err, effectHelp)
 		return 2
 	}
 	switch args[0] {
-	case "add":
-		fs := flag.NewFlagSet("effect add", flag.ContinueOnError)
+	case "help", "-h", "--help":
+		_, _ = fmt.Fprint(a.out, effectHelp)
+		return 0
+	case "create":
+		fs := flag.NewFlagSet("effect create", flag.ContinueOnError)
 		fs.SetOutput(a.err)
 		var in port.CreateEffectInput
 		fs.StringVar(&in.Name, "name", "", "effect name")
+		fs.StringVar(&in.Name, "n", "", "effect name (shorthand)")
 		fs.StringVar(&in.Kind, "kind", "", "effect kind (Buff|Debuff|Status)")
 		fs.StringVar(&in.Description, "description", "", "effect description")
-		if err := fs.Parse(args[1:]); err != nil {
+		if err := parseFlags(fs, args[1:]); err != nil {
+			if isHelpErr(err) {
+				return 0
+			}
 			return 2
 		}
 		e, err := a.rpg.Effects.CreateEffect(ctx, in)
@@ -110,6 +128,9 @@ func (a *App) runEffect(ctx context.Context, args []string) int {
 		_, _ = fmt.Fprintf(a.out, "added %s effect %q\n", e.Kind, e.Name)
 		return 0
 	case "list":
+		if noArgsHelp(a.out, args[1:], "effect list") {
+			return 0
+		}
 		list, err := a.rpg.Effects.ListEffects(ctx)
 		if err != nil {
 			return a.fail(err)
@@ -144,20 +165,38 @@ func (a *App) runEffect(ctx context.Context, args []string) int {
 
 // --- Equipment ---
 
+const equipmentHelp = `tge equipment — Manage equipment
+
+Usage:
+  tge equipment <command> [arguments]
+
+Commands:
+  create       Create new equipment
+  list         List all equipment
+  show         Show details of equipment
+`
+
 func (a *App) runEquipment(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		_, _ = fmt.Fprintln(a.err, "usage: tge equipment <add|list|show>")
+		_, _ = fmt.Fprint(a.err, equipmentHelp)
 		return 2
 	}
 	switch args[0] {
-	case "add":
-		fs := flag.NewFlagSet("equipment add", flag.ContinueOnError)
+	case "help", "-h", "--help":
+		_, _ = fmt.Fprint(a.out, equipmentHelp)
+		return 0
+	case "create":
+		fs := flag.NewFlagSet("equipment create", flag.ContinueOnError)
 		fs.SetOutput(a.err)
 		var in port.CreateEquipmentInput
 		fs.StringVar(&in.Name, "name", "", "equipment name")
+		fs.StringVar(&in.Name, "n", "", "equipment name (shorthand)")
 		fs.StringVar(&in.Slot, "slot", "", "slot (Weapon|Armor|Accessory)")
 		bindStatFlags(fs, &in.Bonus)
-		if err := fs.Parse(args[1:]); err != nil {
+		if err := parseFlags(fs, args[1:]); err != nil {
+			if isHelpErr(err) {
+				return 0
+			}
 			return 2
 		}
 		e, err := a.rpg.Equipment.CreateEquipment(ctx, in)
@@ -167,6 +206,9 @@ func (a *App) runEquipment(ctx context.Context, args []string) int {
 		_, _ = fmt.Fprintf(a.out, "added %s %q\n", e.Slot, e.Name)
 		return 0
 	case "list":
+		if noArgsHelp(a.out, args[1:], "equipment list") {
+			return 0
+		}
 		list, err := a.rpg.Equipment.ListEquipment(ctx)
 		if err != nil {
 			return a.fail(err)
@@ -189,7 +231,7 @@ func (a *App) runEquipment(ctx context.Context, args []string) int {
 			return a.fail(err)
 		}
 		_, _ = fmt.Fprintf(a.out, "%s (%s)\n", e.Name, e.Slot)
-		_, _ = fmt.Fprintf(a.out, "  bonus: %s\n", formatStats(e.Bonus))
+		_, _ = fmt.Fprintf(a.out, "  bonus:%s\n", formatStats(e.Bonus))
 		return 0
 	default:
 		_, _ = fmt.Fprintf(a.err, "unknown equipment subcommand %q\n", args[0])
@@ -199,19 +241,38 @@ func (a *App) runEquipment(ctx context.Context, args []string) int {
 
 // --- Quest ---
 
+const questHelp = `tge quest — Manage quests
+
+Usage:
+  tge quest <command> [arguments]
+
+Commands:
+  create         Create a new quest
+  create-objective Create an objective to a quest
+  list           List all quests
+  show           Show details of a quest
+`
+
 func (a *App) runQuest(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		_, _ = fmt.Fprintln(a.err, "usage: tge quest <add|add-objective|list|show>")
+		_, _ = fmt.Fprint(a.err, questHelp)
 		return 2
 	}
 	switch args[0] {
-	case "add":
-		fs := flag.NewFlagSet("quest add", flag.ContinueOnError)
+	case "help", "-h", "--help":
+		_, _ = fmt.Fprint(a.out, questHelp)
+		return 0
+	case "create":
+		fs := flag.NewFlagSet("quest create", flag.ContinueOnError)
 		fs.SetOutput(a.err)
 		var in port.CreateQuestInput
 		fs.StringVar(&in.Name, "name", "", "quest name")
+		fs.StringVar(&in.Name, "n", "", "quest name (shorthand)")
 		fs.StringVar(&in.Description, "description", "", "quest description")
-		if err := fs.Parse(args[1:]); err != nil {
+		if err := parseFlags(fs, args[1:]); err != nil {
+			if isHelpErr(err) {
+				return 0
+			}
 			return 2
 		}
 		q, err := a.rpg.Quests.CreateQuest(ctx, in)
@@ -220,14 +281,17 @@ func (a *App) runQuest(ctx context.Context, args []string) int {
 		}
 		_, _ = fmt.Fprintf(a.out, "added quest %q\n", q.Name)
 		return 0
-	case "add-objective":
-		fs := flag.NewFlagSet("quest add-objective", flag.ContinueOnError)
+	case "create-objective":
+		fs := flag.NewFlagSet("quest create-objective", flag.ContinueOnError)
 		fs.SetOutput(a.err)
 		var in port.AddQuestObjectiveInput
 		fs.StringVar(&in.Quest, "quest", "", "quest name")
 		fs.IntVar(&in.Order, "order", 0, "objective order")
 		fs.StringVar(&in.Description, "description", "", "objective description")
-		if err := fs.Parse(args[1:]); err != nil {
+		if err := parseFlags(fs, args[1:]); err != nil {
+			if isHelpErr(err) {
+				return 0
+			}
 			return 2
 		}
 		if _, err := a.rpg.Quests.AddObjective(ctx, in); err != nil {
@@ -236,6 +300,9 @@ func (a *App) runQuest(ctx context.Context, args []string) int {
 		_, _ = fmt.Fprintf(a.out, "added objective %d to quest %q\n", in.Order, in.Quest)
 		return 0
 	case "list":
+		if noArgsHelp(a.out, args[1:], "quest list") {
+			return 0
+		}
 		list, err := a.rpg.Quests.ListQuests(ctx)
 		if err != nil {
 			return a.fail(err)
@@ -273,19 +340,38 @@ func (a *App) runQuest(ctx context.Context, args []string) int {
 
 // --- Recipe ---
 
+const recipeHelp = `tge recipe — Manage recipes
+
+Usage:
+  tge recipe <command> [arguments]
+
+Commands:
+  create         Create a new recipe
+  create-input Create an input item to a recipe
+  list           List all recipes
+  show           Show details of a recipe
+`
+
 func (a *App) runRecipe(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		_, _ = fmt.Fprintln(a.err, "usage: tge recipe <add|add-input|list|show>")
+		_, _ = fmt.Fprint(a.err, recipeHelp)
 		return 2
 	}
 	switch args[0] {
-	case "add":
-		fs := flag.NewFlagSet("recipe add", flag.ContinueOnError)
+	case "help", "-h", "--help":
+		_, _ = fmt.Fprint(a.out, recipeHelp)
+		return 0
+	case "create":
+		fs := flag.NewFlagSet("recipe create", flag.ContinueOnError)
 		fs.SetOutput(a.err)
 		var in port.CreateRecipeInput
 		fs.StringVar(&in.Name, "name", "", "recipe name")
+		fs.StringVar(&in.Name, "n", "", "recipe name (shorthand)")
 		fs.StringVar(&in.Output, "output", "", "output item")
-		if err := fs.Parse(args[1:]); err != nil {
+		if err := parseFlags(fs, args[1:]); err != nil {
+			if isHelpErr(err) {
+				return 0
+			}
 			return 2
 		}
 		r, err := a.rpg.Recipes.CreateRecipe(ctx, in)
@@ -294,14 +380,17 @@ func (a *App) runRecipe(ctx context.Context, args []string) int {
 		}
 		_, _ = fmt.Fprintf(a.out, "added recipe %q -> %q\n", r.Name, r.Output)
 		return 0
-	case "add-input":
-		fs := flag.NewFlagSet("recipe add-input", flag.ContinueOnError)
+	case "create-input":
+		fs := flag.NewFlagSet("recipe create-input", flag.ContinueOnError)
 		fs.SetOutput(a.err)
 		var in port.AddIngredientInput
 		fs.StringVar(&in.Recipe, "recipe", "", "recipe name")
 		fs.StringVar(&in.Item, "item", "", "input item")
 		fs.IntVar(&in.Quantity, "quantity", 1, "quantity required")
-		if err := fs.Parse(args[1:]); err != nil {
+		if err := parseFlags(fs, args[1:]); err != nil {
+			if isHelpErr(err) {
+				return 0
+			}
 			return 2
 		}
 		if _, err := a.rpg.Recipes.AddIngredient(ctx, in); err != nil {
@@ -310,6 +399,9 @@ func (a *App) runRecipe(ctx context.Context, args []string) int {
 		_, _ = fmt.Fprintf(a.out, "added %d x %q to recipe %q\n", in.Quantity, in.Item, in.Recipe)
 		return 0
 	case "list":
+		if noArgsHelp(a.out, args[1:], "recipe list") {
+			return 0
+		}
 		list, err := a.rpg.Recipes.ListRecipes(ctx)
 		if err != nil {
 			return a.fail(err)
@@ -348,7 +440,11 @@ func flagName(a *App, name string, args []string) string {
 	fs := flag.NewFlagSet(name, flag.ContinueOnError)
 	fs.SetOutput(a.err)
 	n := fs.String("name", "", "name")
-	if err := fs.Parse(args); err != nil {
+	fs.StringVar(n, "n", "", "name (shorthand)")
+	if err := parseFlags(fs, args); err != nil {
+		if isHelpErr(err) {
+			return ""
+		}
 		return ""
 	}
 	if *n == "" {
@@ -378,9 +474,9 @@ func bindStatFlags(fs *flag.FlagSet, s *rpg.Stats) {
 	fs.IntVar(&s.LUK, "luk", 0, "Luck")
 }
 
-// formatStats renders a stat block on one line.
+// formatStats renders a stat block multiline.
 func formatStats(s rpg.Stats) string {
-	return fmt.Sprintf("STR %d, AGI %d, INT %d, VIT %d, DEX %d, WIS %d, CHA %d, LUK %d",
+	return fmt.Sprintf("\n   STR: %d\n   AGI: %d\n   INT: %d\n   VIT: %d\n   DEX: %d\n   WIS: %d\n   CHA: %d\n   LUK: %d",
 		s.STR, s.AGI, s.INT, s.VIT, s.DEX, s.WIS, s.CHA, s.LUK)
 }
 
@@ -393,19 +489,37 @@ func runSimpleRPGCommand[T any](
 	getName func(T) string,
 	getDesc func(T) string,
 ) int {
+	helpText := fmt.Sprintf(`tge %s — Manage %s
+
+Usage:
+  tge %s <command> [arguments]
+
+Commands:
+  create       Create a new %s
+  list         List all %s
+  show         Show details of a %s
+`, entityName, pluralName, entityName, entityName, pluralName, entityName)
+
 	if len(args) == 0 {
-		_, _ = fmt.Fprintf(a.err, "usage: tge %s <add|list|show>\n", entityName)
+		_, _ = fmt.Fprint(a.err, helpText)
 		return 2
 	}
 	switch args[0] {
-	case "add":
-		fs := flag.NewFlagSet(entityName+" add", flag.ContinueOnError)
+	case "help", "-h", "--help":
+		_, _ = fmt.Fprint(a.out, helpText)
+		return 0
+	case "create":
+		fs := flag.NewFlagSet(entityName+" create", flag.ContinueOnError)
 		fs.SetOutput(a.err)
 		var name, desc, grade string
 		fs.StringVar(&name, "name", "", entityName+" name")
+		fs.StringVar(&name, "n", "", entityName+" name (shorthand)")
 		fs.StringVar(&desc, "description", "", entityName+" description")
 		fs.StringVar(&grade, "grade", "", entityName+" grade (optional)")
-		if err := fs.Parse(args[1:]); err != nil {
+		if err := parseFlags(fs, args[1:]); err != nil {
+			if isHelpErr(err) {
+				return 0
+			}
 			return 2
 		}
 		item, err := create(ctx, name, desc, grade)
@@ -415,6 +529,9 @@ func runSimpleRPGCommand[T any](
 		_, _ = fmt.Fprintf(a.out, "added %s %q\n", entityName, getName(item))
 		return 0
 	case "list":
+		if noArgsHelp(a.out, args[1:], entityName+" list") {
+			return 0
+		}
 		items, err := list(ctx)
 		if err != nil {
 			return a.fail(err)

@@ -1,0 +1,72 @@
+{
+  "Name": "Naruto Uzumaki",
+  "Type": "MainCharacter",
+  "Gender": "Male",
+  "Species": [
+    {
+      "Name": "Human",
+      "Power": 1,
+      "Lifespan": 80,
+      "DefaultGender": ""
+    }
+  ],
+  "PowerValue": "150",
+  "MechanicState": {
+    "Tier": 1,
+    "BasePower": 5,
+    "IsAwakened": true,
+    "Alignment": 80,
+    "EnergyPools": {
+      "Chakra": 1000
+    },
+    "SpellSlots": {},
+    "PermanentTraits": [
+      "Jinchuriki",
+      "Uzumaki Bloodline"
+    ],
+    "Vows": []
+  },
+  "UnlockedNodes": [
+    {
+      "System": "Chakra",
+      "NodeID": "genin",
+      "Level": 1,
+      "Progress": 100,
+      "BasePower": 145
+    }
+  ],
+  "Mortal": {
+    "Age": 12,
+    "Lifespan": 80
+  },
+  "Class": {
+    "Name": "Ninja",
+    "Description": ""
+  },
+  "Profession": {
+    "Name": "Genin",
+    "Description": ""
+  },
+  "Stats": {
+    "STR": 15,
+    "AGI": 20,
+    "INT": 10,
+    "VIT": 80,
+    "DEX": 15,
+    "WIS": 5,
+    "CHA": 30,
+    "LUK": 10
+  },
+  "Inventory": {
+    "Items": [
+      {
+        "Item": "Kunai",
+        "Quantity": 5
+      },
+      {
+        "Item": "Shuriken",
+        "Quantity": 10
+      }
+    ]
+  }
+}

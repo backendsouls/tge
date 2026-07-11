@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"tge/internal/adapter/cli"
 	"tge/internal/config"
-	"tge/internal/core/domain/progression"
+	"tge/internal/core/domain/cultivation"
+	"tge/internal/core/domain/powersystem"
 	"tge/internal/core/domain/rpg"
 	"tge/internal/core/port"
 )
@@ -41,8 +43,8 @@ func seedExists(err error) bool {
 		errors.Is(err, port.ErrQuestExists),
 		errors.Is(err, port.ErrRecipeExists),
 		errors.Is(err, port.ErrPowerSystemExists),
-		errors.Is(err, progression.ErrLevelNumberExists),
-		errors.Is(err, progression.ErrPowerExists),
+		errors.Is(err, cultivation.ErrLevelNumberExists),
+		errors.Is(err, powersystem.ErrNodeExists),
 		errors.Is(err, rpg.ErrObjectiveOrderExists),
 		errors.Is(err, rpg.ErrIngredientExists):
 		return true
@@ -71,7 +73,7 @@ func seedCatalog(ctx context.Context, d seedDeps, cat config.Catalog) error {
 	}
 
 	for i, r := range cat.Realms {
-		if err := seed("realm "+r.Name, second(d.realms.AddRealm(ctx, progression.RealmConfig{
+		if err := seed("realm "+r.Name, second(d.realms.AddRealm(ctx, cultivation.RealmConfig{
 			Name:                   r.Name,
 			Tier:                   i + 1, // catalog order defines the realm sequence
 			PowerMultiplier:        r.PowerMultiplier,
@@ -157,16 +159,36 @@ func seedCatalog(ctx context.Context, d seedDeps, cat config.Catalog) error {
 	}
 
 	for _, ps := range cat.PowerSystems {
-		if err := seed("powersystem "+ps.Name, second(d.systems.CreateSystem(ctx, ps.Name, progression.PowerSystemType(ps.Kind)))); err != nil {
+		if err := seed("powersystem "+ps.Name, second(d.systems.CreateSystem(ctx, ps.Name, powersystem.PowerSystemType(ps.Kind)))); err != nil {
 			return err
 		}
 		var seedPowers func(string, []config.PowerNode) error
-		seedPowers = func(parent string, powers []config.PowerNode) error {
+		seedPowers = func(parentID string, powers []config.PowerNode) error {
 			for _, p := range powers {
-				if err := seed("powersystem "+ps.Name+" power "+p.Name, second(d.systems.AddPower(ctx, port.AddPowerInput{System: ps.Name, Name: p.Name, Parent: parent}))); err != nil {
+				nodeID := strings.ToLower(strings.ReplaceAll(p.Name, " ", "_"))
+				// Add Node
+				if err := seed("powersystem "+ps.Name+" node "+p.Name, second(d.systems.AddNode(ctx, port.AddNodeInput{
+					System:   ps.Name,
+					NodeID:   nodeID,
+					Name:     p.Name,
+					Category: "General",
+				}))); err != nil {
 					return err
 				}
-				if err := seedPowers(p.Name, p.Children); err != nil {
+
+				// Add Edge if parent exists
+				if parentID != "" {
+					if err := seed("powersystem "+ps.Name+" edge "+p.Name, second(d.systems.AddEdge(ctx, port.AddEdgeInput{
+						System:   ps.Name,
+						NodeID:   nodeID,
+						TargetID: parentID,
+						EdgeType: powersystem.EdgeParent,
+					}))); err != nil {
+						return err
+					}
+				}
+
+				if err := seedPowers(nodeID, p.Children); err != nil {
 					return err
 				}
 			}

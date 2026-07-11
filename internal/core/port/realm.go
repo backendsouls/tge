@@ -12,7 +12,7 @@ package port
 import (
 	"context"
 	"errors"
-	"tge/internal/core/domain/progression"
+	"tge/internal/core/domain/cultivation"
 )
 
 var (
@@ -34,18 +34,18 @@ type AddLevelInput struct {
 // RealmRepository is a driven port: it persists and retrieves realms. Adapters
 // (SQLite, in-memory, ...) implement it so the core never depends on storage.
 type RealmRepository interface {
-	Save(ctx context.Context, r progression.Realm) error
-	FindByName(ctx context.Context, name string) (progression.Realm, error)
-	List(ctx context.Context) ([]progression.Realm, error)
+	Save(ctx context.Context, r cultivation.Realm) error
+	FindByName(ctx context.Context, name string) (cultivation.Realm, error)
+	List(ctx context.Context) ([]cultivation.Realm, error)
 	// AddLevel adds an ordered level to an existing realm.
-	AddLevel(ctx context.Context, realm string, l progression.Level) error
+	AddLevel(ctx context.Context, realm string, l cultivation.Level) error
 }
 
 // RealmService is a driving port: the use cases the application exposes. Inbound
 // adapters (the CLI) depend on this interface, not on a concrete implementation.
 type RealmService interface {
-	AddRealm(ctx context.Context, cfg progression.RealmConfig) (progression.Realm, error)
-	ListRealms(ctx context.Context) ([]progression.Realm, error)
-	GetRealm(ctx context.Context, name string) (progression.Realm, error)
-	AddLevel(ctx context.Context, in AddLevelInput) (progression.Realm, error)
+	AddRealm(ctx context.Context, cfg cultivation.RealmConfig) (cultivation.Realm, error)
+	ListRealms(ctx context.Context) ([]cultivation.Realm, error)
+	GetRealm(ctx context.Context, name string) (cultivation.Realm, error)
+	AddLevel(ctx context.Context, in AddLevelInput) (cultivation.Realm, error)
 }

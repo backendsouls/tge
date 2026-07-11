@@ -4,7 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"tge/internal/core/domain/progression"
+
+	"tge/internal/core/domain/powersystem"
 )
 
 var (
@@ -23,7 +24,7 @@ var (
 // with the power systems themselves.
 type Universe struct {
 	Name    string
-	Systems []progression.PowerSystem
+	Systems []powersystem.PowerSystem
 	Realms  []Location
 }
 
@@ -41,14 +42,14 @@ func NewUniverse(name string) (Universe, error) {
 func (u *Universe) AddSystem(name string) error {
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return progression.ErrInvalidSystemName
+		return powersystem.ErrInvalidSystemName
 	}
 	for _, s := range u.Systems {
 		if s.Name == name {
 			return fmt.Errorf("%w: %q", ErrUniverseSystemExists, name)
 		}
 	}
-	u.Systems = append(u.Systems, progression.PowerSystem{Name: name})
+	u.Systems = append(u.Systems, powersystem.PowerSystem{Name: name})
 	return nil
 }
 

@@ -1,0 +1,70 @@
+{
+  "Name": "Naruto Uzumaki",
+  "Type": "MainCharacter",
+  "Gender": "Male",
+  "Species": [
+    {
+      "Name": "Human",
+      "Power": 1,
+      "Lifespan": 80,
+      "DefaultGender": ""
+    }
+  ],
+  "PowerValue": "2000",
+  "MechanicState": {
+    "Tier": 3,
+    "BasePower": 50,
+    "IsAwakened": true,
+    "Alignment": 85,
+    "EnergyPools": {
+      "Chakra": 50000,
+      "Senjutsu": 10000
+    },
+    "SpellSlots": {},
+    "PermanentTraits": [
+      "Jinchuriki",
+      "Uzumaki Bloodline",
+      "Sage Mode"
+    ],
+    "Vows": []
+  },
+  "UnlockedNodes": [
+    {
+      "System": "Chakra",
+      "NodeID": "sage_mode",
+      "Level": 3,
+      "Progress": 100,
+      "BasePower": 1950
+    }
+  ],
+  "Mortal": {
+    "Age": 16,
+    "Lifespan": 80
+  },
+  "Class": {
+    "Name": "Ninja",
+    "Description": ""
+  },
+  "Profession": {
+    "Name": "Sage",
+    "Description": ""
+  },
+  "Stats": {
+    "STR": 200,
+    "AGI": 250,
+    "INT": 50,
+    "VIT": 500,
+    "DEX": 200,
+    "WIS": 80,
+    "CHA": 100,
+    "LUK": 20
+  },
+  "Inventory": {
+    "Items": [
+      {
+        "Item": "Special Kunai",
+        "Quantity": 3
+      }
+    ]
+  }
+}

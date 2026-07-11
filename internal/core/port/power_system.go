@@ -3,7 +3,7 @@ package port
 import (
 	"context"
 	"errors"
-	"tge/internal/core/domain/progression"
+	"tge/internal/core/domain/powersystem"
 )
 
 var (
@@ -13,28 +13,35 @@ var (
 	ErrPowerSystemExists = errors.New("power system: already exists")
 )
 
-// AddPowerInput describes a power to add to an existing system. An empty Parent
-// makes the power a root.
-type AddPowerInput struct {
-	System string
-	Name   string
-	Parent string
+// AddNodeInput describes a power node to add to an existing system DAG.
+type AddNodeInput struct {
+	System   string
+	NodeID   string
+	Name     string
+	Category string
+	Tags     []string
 }
 
-// PowerSystemRepository is a driven port persisting power systems and their
-// power trees.
+// AddEdgeInput links two nodes in the DAG.
+type AddEdgeInput struct {
+	System   string
+	NodeID   string
+	TargetID string
+	EdgeType powersystem.EdgeType
+}
+
+// PowerSystemRepository is a driven port persisting power systems and their DAGs.
 type PowerSystemRepository interface {
-	Create(ctx context.Context, name string) error
-	FindByName(ctx context.Context, name string) (progression.PowerSystem, error)
-	List(ctx context.Context) ([]progression.PowerSystem, error)
-	// SavePowers replaces the stored powers of a system with the given tree.
-	SavePowers(ctx context.Context, system progression.PowerSystem) error
+	Save(ctx context.Context, system powersystem.PowerSystem) error
+	FindByName(ctx context.Context, name string) (powersystem.PowerSystem, error)
+	List(ctx context.Context) ([]powersystem.PowerSystem, error)
 }
 
 // PowerSystemService is a driving port for power-system use cases.
 type PowerSystemService interface {
-	CreateSystem(ctx context.Context, name string, kind progression.PowerSystemType) (progression.PowerSystem, error)
-	AddPower(ctx context.Context, in AddPowerInput) (progression.PowerSystem, error)
-	GetSystem(ctx context.Context, name string) (progression.PowerSystem, error)
-	ListSystems(ctx context.Context) ([]progression.PowerSystem, error)
+	CreateSystem(ctx context.Context, name string, kind powersystem.PowerSystemType) (powersystem.PowerSystem, error)
+	AddNode(ctx context.Context, in AddNodeInput) (powersystem.PowerSystem, error)
+	AddEdge(ctx context.Context, in AddEdgeInput) (powersystem.PowerSystem, error)
+	GetSystem(ctx context.Context, name string) (powersystem.PowerSystem, error)
+	ListSystems(ctx context.Context) ([]powersystem.PowerSystem, error)
 }

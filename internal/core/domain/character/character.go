@@ -4,27 +4,18 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"tge/internal/core/domain/progression"
+	"tge/internal/core/domain/power"
 	"tge/internal/core/domain/rpg"
 )
 
 var (
-	// ErrInvalidName is returned when a character name is empty or whitespace only.
-	ErrInvalidName = errors.New("character: name must not be empty")
-	// ErrMissingSystem is returned when a character has no power system.
-	ErrMissingSystem = errors.New("character: at least one power system is required")
-	// ErrInvalidCharacterType is returned for an unknown character type.
-	ErrInvalidCharacterType = errors.New("character: invalid type")
-	// ErrInvalidGender is returned for an unknown gender.
-	ErrInvalidGender = errors.New("character: invalid gender")
-	// ErrMainCharacterRequired is returned when a Hero/Heroine is created with no main character.
+	ErrInvalidName           = errors.New("character: name must not be empty")
+	ErrInvalidCharacterType  = errors.New("character: invalid type")
+	ErrInvalidGender         = errors.New("character: invalid gender")
 	ErrMainCharacterRequired = errors.New("character: role requires a main character")
-	// ErrRoleGenderMismatch is returned when a role conflicts with the main character's gender.
-	ErrRoleGenderMismatch = errors.New("character: role not allowed for the main character's gender")
+	ErrRoleGenderMismatch    = errors.New("character: role not allowed for the main character's gender")
 )
 
-// Gender is a character's gender. Hero/Heroine eligibility depends on the main
-// character's gender.
 type Gender string
 
 const (
@@ -32,22 +23,18 @@ const (
 	Female Gender = "Female"
 )
 
-// Valid reports whether g is a known gender.
 func (g Gender) Valid() bool { return g == Male || g == Female }
 
-// CharacterType is a character's narrative role. It is a closed set (enum-like),
-// unlike powers which are an open, growing tree of entities.
 type CharacterType string
 
 const (
 	MainCharacter    CharacterType = "MainCharacter"
 	SideCharacter    CharacterType = "SideCharacter"
 	SupportCharacter CharacterType = "SupportCharacter"
-	Hero             CharacterType = "Hero"    // male lead; requires a female main character
-	Heroine          CharacterType = "Heroine" // female lead; requires a male main character
+	Hero             CharacterType = "Hero"
+	Heroine          CharacterType = "Heroine"
 )
 
-// Valid reports whether t is a known character type.
 func (t CharacterType) Valid() bool {
 	switch t {
 	case MainCharacter, SideCharacter, SupportCharacter, Hero, Heroine:
@@ -56,8 +43,6 @@ func (t CharacterType) Valid() bool {
 	return false
 }
 
-// requiredMainGender returns the main-character gender this role requires, and
-// whether the role has such a requirement at all.
 func (t CharacterType) requiredMainGender() (Gender, bool) {
 	switch t {
 	case Hero:
@@ -69,56 +54,114 @@ func (t CharacterType) requiredMainGender() (Gender, bool) {
 	}
 }
 
-// Mortal holds the non-cultivation attributes every character has from birth.
 type Mortal struct {
 	Age      int
 	Lifespan int
 }
 
-// Character is a being in the story. It belongs to one or more power systems and
-// is created in its initial mortal form (only mortal data, no cultivation). Its
-// RPG attributes (Class, Profession, Stats, Inventory) are optional and default
-// to empty/base values.
+// NodeProgress tracks a character's state at a specific PowerNode in a PowerSystem.
+type NodeProgress struct {
+	System    string
+	NodeID    string
+	Level     int
+	Progress  float64
+	BasePower float64
+}
+
+type IdleRates struct {
+	SkillPointsPerHour       float64 `json:"skill_points_per_hour"`
+	CultivationPointsPerHour float64 `json:"cultivation_points_per_hour"`
+	AbilityPointsPerHour     float64 `json:"ability_points_per_hour"`
+	ProfessionPointsPerHour  float64 `json:"profession_points_per_hour"`
+}
+
+type IdleState struct {
+	StartTime      int64     `json:"start_time"`
+	ActiveActivity string    `json:"active_activity"`
+	Rates          IdleRates `json:"rates"`
+}
+
 type Character struct {
+	Name          string
+	Type          CharacterType
+	Gender        Gender
+	Species       []Species
+	PowerValue    string // The string representation of Total Power
+	MechanicState power.MechanicState
+	UnlockedNodes []NodeProgress
+	Mortal        Mortal
+	Class         rpg.Class
+	Profession    rpg.Profession
+	Stats         rpg.Stats
+	Inventory     rpg.Inventory
+	IdleState     IdleState
+	NovelTime     int64 // The current time in the novel/history for this character (in seconds)
+}
+
+// CalculateTotalPower dynamically computes the character's power level.
+// Formula: (MechanicState.BasePower + Sum(UnlockedNodes.BasePower)) * Species.Power
+func (c *Character) CalculateTotalPower() float64 {
+	total := c.MechanicState.BasePower
+
+	for _, node := range c.UnlockedNodes {
+		total += node.BasePower
+	}
+
+	// Apply species multiplier
+	if len(c.Species) > 0 {
+		total *= c.Species[0].Power
+	}
+
+	if total < 1.0 {
+		total = 1.0
+	}
+
+	c.PowerValue = fmt.Sprintf("%g", total)
+	return total
+}
+
+// CurrentEnergyPools calculates the current energy pools including dynamically generated idle points.
+func (c *Character) CurrentEnergyPools(currentNovelTime int64) map[string]int {
+	pools := make(map[string]int)
+	if c.MechanicState.EnergyPools != nil {
+		for k, v := range c.MechanicState.EnergyPools {
+			pools[k] = v
+		}
+	}
+
+	if c.IdleState.StartTime >= 0 && currentNovelTime > c.IdleState.StartTime {
+		deltaHours := float64(currentNovelTime-c.IdleState.StartTime) / 3600.0
+
+		if c.IdleState.Rates.SkillPointsPerHour > 0 {
+			pools["SkillPoints"] += int(deltaHours * c.IdleState.Rates.SkillPointsPerHour)
+		}
+		if c.IdleState.Rates.CultivationPointsPerHour > 0 {
+			pools["CultivationPoints"] += int(deltaHours * c.IdleState.Rates.CultivationPointsPerHour)
+		}
+		if c.IdleState.Rates.AbilityPointsPerHour > 0 {
+			pools["AbilityPoints"] += int(deltaHours * c.IdleState.Rates.AbilityPointsPerHour)
+		}
+		if c.IdleState.Rates.ProfessionPointsPerHour > 0 {
+			pools["ProfessionPoints"] += int(deltaHours * c.IdleState.Rates.ProfessionPointsPerHour)
+		}
+	}
+
+	return pools
+}
+
+type CharacterConfig struct {
 	Name       string
 	Type       CharacterType
 	Gender     Gender
-	Species    []Species
-	PowerValue string // numeric value rendered as a string; computed later
-	// Power is the character's attained power: its own progressed instances of the
-	// power systems it has developed, one PowerSystem per system, with progress
-	// hung on the tree nodes (PowerState). Empty for a fresh mortal.
-	Power []progression.PowerSystem
-	// PowerSystems is the complete tree definitions the character has access to.
-	PowerSystems []progression.PowerSystem
-	Mortal       Mortal
-	Class        rpg.Class      // optional
-	Profession   rpg.Profession // optional
-	Stats        rpg.Stats
-	Inventory    rpg.Inventory
+	Species    Species
+	Class      rpg.Class
+	Profession rpg.Profession
+	Age        int
+	Stats      rpg.Stats
 }
 
-// CharacterConfig holds the attributes used to construct a Character. Age and
-// Stats are optional: a non-positive Age falls back to defaultAge and a zero
-// Stats block falls back to rpg.BaseStats.
-type CharacterConfig struct {
-	Name         string
-	Type         CharacterType
-	Gender       Gender
-	Species      Species
-	PowerSystems []progression.PowerSystem
-	Class        rpg.Class
-	Profession   rpg.Profession
-	Age          int
-	Stats        rpg.Stats
-}
-
-// defaultAge is the starting age for a new mortal when none is configured.
 const defaultAge = 16
 
-// NewMortalCharacter validates cfg and builds a fresh mortal character. Cross-
-// character rules (Hero/Heroine vs. the main character) are enforced separately
-// via CheckRole, since they require knowledge of other characters.
 func NewMortalCharacter(cfg CharacterConfig) (Character, error) {
 	name := strings.TrimSpace(cfg.Name)
 	if name == "" {
@@ -130,10 +173,7 @@ func NewMortalCharacter(cfg CharacterConfig) (Character, error) {
 	if !cfg.Gender.Valid() {
 		return Character{}, fmt.Errorf("%w: %q", ErrInvalidGender, cfg.Gender)
 	}
-	if len(cfg.PowerSystems) == 0 {
-		return Character{}, ErrMissingSystem
-	}
-	power := fmt.Sprintf("%g", cfg.Species.Power)
+
 	age := cfg.Age
 	if age <= 0 {
 		age = defaultAge
@@ -142,23 +182,26 @@ func NewMortalCharacter(cfg CharacterConfig) (Character, error) {
 	if stats == (rpg.Stats{}) {
 		stats = rpg.BaseStats()
 	}
-	return Character{
-		Name:         name,
-		Type:         cfg.Type,
-		Gender:       cfg.Gender,
-		Species:      []Species{cfg.Species},
-		PowerValue:   power,
-		PowerSystems: cfg.PowerSystems,
-		Mortal:       Mortal{Age: age, Lifespan: cfg.Species.Lifespan},
-		Class:        cfg.Class,
-		Profession:   cfg.Profession,
-		Stats:        stats,
-	}, nil
+
+	state, _ := power.NewMechanicState(0, 1.0)
+
+	char := Character{
+		Name:          name,
+		Type:          cfg.Type,
+		Gender:        cfg.Gender,
+		Species:       []Species{cfg.Species},
+		MechanicState: state,
+		UnlockedNodes: []NodeProgress{},
+		Mortal:        Mortal{Age: age, Lifespan: cfg.Species.Lifespan},
+		Class:         cfg.Class,
+		Profession:    cfg.Profession,
+		Stats:         stats,
+	}
+	char.CalculateTotalPower()
+
+	return char, nil
 }
 
-// CheckRole enforces the Hero/Heroine rules against the existing main characters.
-// A lead role is allowed when at least one main character has the required
-// gender. Non-lead roles always pass.
 func CheckRole(t CharacterType, mainCharacters []Character) error {
 	want, requires := t.requiredMainGender()
 	if !requires {

@@ -1,0 +1,413 @@
+{
+  "Name": "SuperPower",
+  "PowerSystemType": "SuperPower",
+  "Nodes": {
+    "biological_alteration": {
+      "ID": "biological_alteration",
+      "Name": "Biological Alteration",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "elasticity": {
+      "ID": "elasticity",
+      "Name": "Elasticity",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "biological_alteration",
+        "biological_alteration",
+        "biological_alteration",
+        "biological_alteration"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "electrokinesis": {
+      "ID": "electrokinesis",
+      "Name": "Electrokinesis",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "energy_manipulation",
+        "energy_manipulation",
+        "energy_manipulation",
+        "energy_manipulation"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "energy_manipulation": {
+      "ID": "energy_manipulation",
+      "Name": "Energy Manipulation",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "energy_projection": {
+      "ID": "energy_projection",
+      "Name": "Energy Projection",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "energy_manipulation",
+        "energy_manipulation",
+        "energy_manipulation",
+        "energy_manipulation"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "enhanced_senses": {
+      "ID": "enhanced_senses",
+      "Name": "Enhanced Senses",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "physical_enhancements",
+        "physical_enhancements",
+        "physical_enhancements",
+        "physical_enhancements"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "force_fields": {
+      "ID": "force_fields",
+      "Name": "Force Fields",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "energy_manipulation",
+        "energy_manipulation",
+        "energy_manipulation",
+        "energy_manipulation"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "gravity_control": {
+      "ID": "gravity_control",
+      "Name": "Gravity Control",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "reality_manipulation",
+        "reality_manipulation",
+        "reality_manipulation",
+        "reality_manipulation"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "invisibility": {
+      "ID": "invisibility",
+      "Name": "Invisibility",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "biological_alteration",
+        "biological_alteration",
+        "biological_alteration",
+        "biological_alteration"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "invulnerability": {
+      "ID": "invulnerability",
+      "Name": "Invulnerability",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "physical_enhancements",
+        "physical_enhancements",
+        "physical_enhancements",
+        "physical_enhancements"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "mental_abilities": {
+      "ID": "mental_abilities",
+      "Name": "Mental Abilities",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "mind_control": {
+      "ID": "mind_control",
+      "Name": "Mind Control",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "mental_abilities",
+        "mental_abilities",
+        "mental_abilities",
+        "mental_abilities"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "physical_enhancements": {
+      "ID": "physical_enhancements",
+      "Name": "Physical Enhancements",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "precognition": {
+      "ID": "precognition",
+      "Name": "Precognition",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "mental_abilities",
+        "mental_abilities",
+        "mental_abilities",
+        "mental_abilities"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "pyrokinesis": {
+      "ID": "pyrokinesis",
+      "Name": "Pyrokinesis",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "energy_manipulation",
+        "energy_manipulation",
+        "energy_manipulation",
+        "energy_manipulation"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "reality_manipulation": {
+      "ID": "reality_manipulation",
+      "Name": "Reality Manipulation",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "regeneration": {
+      "ID": "regeneration",
+      "Name": "Regeneration",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "biological_alteration",
+        "biological_alteration",
+        "biological_alteration",
+        "biological_alteration"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "shapeshifting": {
+      "ID": "shapeshifting",
+      "Name": "Shapeshifting",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "biological_alteration",
+        "biological_alteration",
+        "biological_alteration",
+        "biological_alteration"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "super_speed": {
+      "ID": "super_speed",
+      "Name": "Super Speed",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "physical_enhancements",
+        "physical_enhancements",
+        "physical_enhancements",
+        "physical_enhancements"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "super_strength": {
+      "ID": "super_strength",
+      "Name": "Super Strength",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "physical_enhancements",
+        "physical_enhancements",
+        "physical_enhancements",
+        "physical_enhancements"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "telekinesis": {
+      "ID": "telekinesis",
+      "Name": "Telekinesis",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "mental_abilities",
+        "mental_abilities",
+        "mental_abilities",
+        "mental_abilities"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "telepathy": {
+      "ID": "telepathy",
+      "Name": "Telepathy",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "mental_abilities",
+        "mental_abilities",
+        "mental_abilities",
+        "mental_abilities"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "teleportation": {
+      "ID": "teleportation",
+      "Name": "Teleportation",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "reality_manipulation",
+        "reality_manipulation",
+        "reality_manipulation",
+        "reality_manipulation"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "time_manipulation": {
+      "ID": "time_manipulation",
+      "Name": "Time Manipulation",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [
+        "reality_manipulation",
+        "reality_manipulation",
+        "reality_manipulation",
+        "reality_manipulation"
+      ],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    }
+  }
+}
