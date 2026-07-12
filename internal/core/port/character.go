@@ -83,6 +83,21 @@ type CultivationRecord struct {
 	Progress           float64
 }
 
+// AwakenSuperPowerInput sets a character's superpower tier.
+type AwakenSuperPowerInput struct {
+	Character string
+	System    string
+	Path      string
+	Tier      int
+}
+
+// SuperPowerRecord is one persisted superpower entry for a character.
+type SuperPowerRecord struct {
+	System string
+	Path   string
+	Tier   int
+}
+
 // CharacterRepository is a driven port persisting characters keyed by name.
 type CharacterRepository interface {
 	Save(ctx context.Context, c character.Character) error
@@ -95,7 +110,10 @@ type CharacterRepository interface {
 	AddItem(ctx context.Context, character, item string, quantity int) error
 	// SaveCultivation sets (upserts) a character's cultivation state at one
 	// (System, Path) node.
+	UpdatePowerValue(ctx context.Context, name string, power string) error
 	SaveCultivation(ctx context.Context, character string, rec CultivationRecord) error
+	// SaveSuperPower sets (upserts) a character's superpower state.
+	SaveSuperPower(ctx context.Context, character string, rec SuperPowerRecord) error
 }
 
 // CharacterService is a driving port for character use cases.
@@ -111,4 +129,6 @@ type CharacterService interface {
 	// Train adds cultivation points to a character's power node, advancing its
 	// level (and realm) as the breakthrough and bottleneck gates fill.
 	Train(ctx context.Context, in TrainInput) (character.Character, error)
+	// AwakenSuperPower sets a character's superpower tier at a power node.
+	AwakenSuperPower(ctx context.Context, in AwakenSuperPowerInput) (character.Character, error)
 }

@@ -72,7 +72,7 @@ func (c CultivationState) AdvanceWithin(points int) (CultivationState, int) {
 }
 
 // Kind implements PowerState.
-func (CultivationState) Kind() SystemKind { return Cultivation }
+func (CultivationState) Kind() PowerSystemType { return Cultivation }
 
 // Power returns the cultivation's current power via the realm's formula.
 func (c CultivationState) Power() float64 { return c.Realm.Power(c.Progress) }

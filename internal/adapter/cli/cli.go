@@ -246,7 +246,7 @@ func (s *stringSlice) Set(v string) error { *s = append(*s, v); return nil }
 
 func (a *App) runCharacter(ctx context.Context, args []string) int {
 	if len(args) == 0 {
-		_, _ = fmt.Fprintln(a.err, "usage: tge character <create|list|give-item|cultivate|train>")
+		_, _ = fmt.Fprintln(a.err, "usage: tge character <create|list|give-item|cultivate|train|awaken>")
 		return 2
 	}
 	switch args[0] {
@@ -260,10 +260,35 @@ func (a *App) runCharacter(ctx context.Context, args []string) int {
 		return a.characterCultivate(ctx, args[1:])
 	case "train":
 		return a.characterTrain(ctx, args[1:])
+	case "awaken":
+		return a.characterAwaken(ctx, args[1:])
 	default:
 		_, _ = fmt.Fprintf(a.err, "unknown character subcommand %q\n", args[0])
 		return 2
 	}
+}
+
+func (a *App) characterAwaken(ctx context.Context, args []string) int {
+	fs := flag.NewFlagSet("character awaken", flag.ContinueOnError)
+	fs.SetOutput(a.err)
+	var in port.AwakenSuperPowerInput
+	fs.StringVar(&in.Character, "name", "", "character name")
+	fs.StringVar(&in.System, "system", "", "power system (defaults to the character's first superpower system)")
+	fs.StringVar(&in.Path, "path", "", "power/path node (defaults to the system name)")
+	fs.IntVar(&in.Tier, "tier", 0, "tier (0 to 5)")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	if in.Character == "" {
+		_, _ = fmt.Fprintln(a.err, "character name is required")
+		return 2
+	}
+	c, err := a.characters.AwakenSuperPower(ctx, in)
+	if err != nil {
+		return a.fail(err)
+	}
+	_, _ = fmt.Fprintf(a.out, "%s awakened superpower to tier %d\n", c.Name, in.Tier)
+	return 0
 }
 
 func (a *App) characterGiveItem(ctx context.Context, args []string) int {
@@ -496,7 +521,7 @@ func (a *App) status(ctx context.Context, args []string) int {
 	} else {
 		_, _ = fmt.Fprintln(a.out, "  Power:")
 		for _, ps := range c.Power {
-			label := string(ps.Kind)
+			label := string(ps.PowerSystemType)
 			if label == "" {
 				label = ps.Name
 			}
@@ -566,10 +591,11 @@ func (a *App) powerSystemAdd(ctx context.Context, args []string) int {
 	fs := flag.NewFlagSet("powersystem add", flag.ContinueOnError)
 	fs.SetOutput(a.err)
 	name := fs.String("name", "", "power system name")
+	kind := fs.String("kind", "Cultivation", "power system kind (Cultivation, Magic, SuperPower)")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
-	ps, err := a.powerSystems.CreateSystem(ctx, *name)
+	ps, err := a.powerSystems.CreateSystem(ctx, *name, progression.PowerSystemType(*kind))
 	if err != nil {
 		return a.fail(err)
 	}
@@ -635,9 +661,9 @@ func writePowerTree(w io.Writer, p progression.Power, depth int) {
 	}
 }
 
-// writePowerState renders a character's progressed power node and its children:
+// writePowerState renders a character's progressed power node:
 // the node name, then its cultivation Realm/Level when the node carries a
-// CultivationState, recursing into sub-powers.
+// CultivationState, or Tier when it is a SuperPowerState.
 func writePowerState(w io.Writer, p progression.Power, depth int) {
 	indent := strings.Repeat("  ", depth)
 	_, _ = fmt.Fprintf(w, "%s- %s:\n", indent, p.Name)
@@ -646,9 +672,8 @@ func writePowerState(w io.Writer, p progression.Power, depth int) {
 		_, _ = fmt.Fprintf(w, "%s  - Level: %s\n", indent, cs.Level.Name)
 		_, _ = fmt.Fprintf(w, "%s  - Breakthrough: %d/%d\n", indent, cs.Points, cs.Level.BreakthroughPoints)
 		_, _ = fmt.Fprintf(w, "%s  - Bottleneck: %d/%d\n", indent, cs.Bottleneck, cs.Level.BottleneckPoints)
-	}
-	for _, c := range p.Children {
-		writePowerState(w, c, depth+1)
+	} else if sp, ok := p.State.(progression.SuperPowerState); ok {
+		_, _ = fmt.Fprintf(w, "%s  - Tier: %d (Power: x%g)\n", indent, sp.Tier, sp.Power())
 	}
 }
 

@@ -161,14 +161,47 @@ func (s *CharacterService) Cultivate(ctx context.Context, in port.CultivateInput
 
 	system := in.System
 	if system == "" {
-		if len(c.PowerSystems) == 0 {
+		for _, ps := range c.PowerSystems {
+			if ps.PowerSystemType == progression.Cultivation {
+				system = ps.Name
+				break
+			}
+		}
+		if system == "" {
 			return character.Character{}, character.ErrMissingSystem
 		}
-		system = c.PowerSystems[0].Name
+	} else {
+		var valid bool
+		for _, ps := range c.PowerSystems {
+			if ps.Name == system && ps.PowerSystemType == progression.Cultivation {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			return character.Character{}, fmt.Errorf("cultivation: system %q is not a valid cultivation system for this character", system)
+		}
 	}
+
 	path := in.Path
 	if path == "" {
 		path = system
+	}
+	
+	// Validate path using the domain tree
+	sys, err := s.systems.GetSystem(ctx, system)
+	if err != nil {
+		return character.Character{}, fmt.Errorf("cultivation: load system %q: %w", system, err)
+	}
+	var pathFound bool
+	for _, n := range sys.Names() {
+		if n == path {
+			pathFound = true
+			break
+		}
+	}
+	if !pathFound {
+		return character.Character{}, fmt.Errorf("cultivation: path %q does not exist in system %q", path, system)
 	}
 
 	rec := port.CultivationRecord{
@@ -186,7 +219,7 @@ func (s *CharacterService) Cultivate(ctx context.Context, in port.CultivateInput
 	if err := s.chars.SaveCultivation(ctx, in.Character, rec); err != nil {
 		return character.Character{}, err
 	}
-	return s.chars.FindByName(ctx, in.Character)
+	return s.syncPower(ctx, in.Character)
 }
 
 // Train adds cultivation points to a character's power node, filling the current
@@ -206,14 +239,47 @@ func (s *CharacterService) Train(ctx context.Context, in port.TrainInput) (chara
 
 	system := in.System
 	if system == "" {
-		if len(c.PowerSystems) == 0 {
+		for _, ps := range c.PowerSystems {
+			if ps.PowerSystemType == progression.Cultivation {
+				system = ps.Name
+				break
+			}
+		}
+		if system == "" {
 			return character.Character{}, character.ErrMissingSystem
 		}
-		system = c.PowerSystems[0].Name
+	} else {
+		var valid bool
+		for _, ps := range c.PowerSystems {
+			if ps.Name == system && ps.PowerSystemType == progression.Cultivation {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			return character.Character{}, fmt.Errorf("cultivation: system %q is not a valid cultivation system for this character", system)
+		}
 	}
+
 	path := in.Path
 	if path == "" {
 		path = system
+	}
+
+	// Validate path using the domain tree
+	sys, err := s.systems.GetSystem(ctx, system)
+	if err != nil {
+		return character.Character{}, fmt.Errorf("cultivation: load system %q: %w", system, err)
+	}
+	var pathFound bool
+	for _, n := range sys.Names() {
+		if n == path {
+			pathFound = true
+			break
+		}
+	}
+	if !pathFound {
+		return character.Character{}, fmt.Errorf("cultivation: path %q does not exist in system %q", path, system)
 	}
 
 	// Establish the starting state, rehydrating the realm with its full level
@@ -267,7 +333,117 @@ func (s *CharacterService) Train(ctx context.Context, in port.TrainInput) (chara
 	if err := s.chars.SaveCultivation(ctx, in.Character, rec); err != nil {
 		return character.Character{}, err
 	}
-	return s.chars.FindByName(ctx, in.Character)
+	return s.syncPower(ctx, in.Character)
+}
+
+// AwakenSuperPower sets a character's superpower tier at a power node.
+func (s *CharacterService) AwakenSuperPower(ctx context.Context, in port.AwakenSuperPowerInput) (character.Character, error) {
+	state, err := progression.NewSuperPowerState(in.Tier)
+	if err != nil {
+		return character.Character{}, fmt.Errorf("superpower: invalid tier %d, %w", in.Tier, err)
+	}
+	c, err := s.chars.FindByName(ctx, in.Character)
+	if err != nil {
+		return character.Character{}, err
+	}
+	
+	var targetSystem progression.PowerSystem
+	if in.System == "" {
+		for _, ps := range c.PowerSystems {
+			if ps.PowerSystemType == progression.SuperPower {
+				targetSystem = ps
+				break
+			}
+		}
+		if targetSystem.Name == "" {
+			return character.Character{}, errors.New("superpower: no superpower system found on character")
+		}
+	} else {
+		for _, ps := range c.PowerSystems {
+			if ps.Name == in.System {
+				targetSystem = ps
+				break
+			}
+		}
+		if targetSystem.Name == "" {
+			return character.Character{}, fmt.Errorf("superpower: character does not belong to system %q", in.System)
+		}
+		if targetSystem.PowerSystemType != progression.SuperPower {
+			return character.Character{}, fmt.Errorf("superpower: system %q is not a superpower system", in.System)
+		}
+	}
+
+	if in.Path == "" {
+		in.Path = targetSystem.Name
+	}
+	
+	// Fetch full power system to validate path
+	fullTargetSystem, err := s.systems.GetSystem(ctx, targetSystem.Name)
+	if err != nil {
+		return character.Character{}, fmt.Errorf("superpower: load system %q: %w", targetSystem.Name, err)
+	}
+	var pathFound bool
+	for _, n := range fullTargetSystem.Names() {
+		if n == in.Path {
+			pathFound = true
+			break
+		}
+	}
+	if !pathFound {
+		return character.Character{}, fmt.Errorf("superpower: path %q does not exist in system %q", in.Path, targetSystem.Name)
+	}
+
+	// Validate monotonic growth
+	existingTier := 0
+	if sp, ok := superPowerAt(c, targetSystem.Name, in.Path); ok {
+		existingTier = sp.Tier
+	}
+	if in.Tier < existingTier {
+		return character.Character{}, fmt.Errorf("superpower: cannot downgrade from tier %d to %d", existingTier, in.Tier)
+	}
+
+	rec := port.SuperPowerRecord{
+		System: targetSystem.Name,
+		Path:   in.Path,
+		Tier:   state.Tier,
+	}
+	if err := s.chars.SaveSuperPower(ctx, in.Character, rec); err != nil {
+		return character.Character{}, err
+	}
+	return s.syncPower(ctx, in.Character)
+}
+
+// syncPower recalculates and updates the character's globally observed power level.
+func (s *CharacterService) syncPower(ctx context.Context, name string) (character.Character, error) {
+	c, err := s.chars.FindByName(ctx, name)
+	if err != nil {
+		return character.Character{}, err
+	}
+	var total float64
+	for _, ps := range c.Power {
+		for _, p := range ps.Powers {
+			if sp, ok := p.State.(progression.SuperPowerState); ok {
+				total += sp.Power()
+			}
+			if cs, ok := p.State.(progression.CultivationState); ok {
+				total += cs.Realm.PowerMultiplier * float64(cs.Level.Number)
+			}
+		}
+	}
+	if total < 1.0 {
+		total = 1.0
+	}
+	if len(c.Species) > 0 {
+		total *= c.Species[0].Power
+	}
+	newPower := fmt.Sprintf("%g", total)
+	if c.PowerValue != newPower {
+		if err := s.chars.UpdatePowerValue(ctx, c.Name, newPower); err != nil {
+			return character.Character{}, err
+		}
+		c.PowerValue = newPower
+	}
+	return c, nil
 }
 
 // cultivationAt returns the CultivationState at a character's (system, path)
@@ -287,6 +463,25 @@ func cultivationAt(c character.Character, system, path string) (progression.Cult
 		}
 	}
 	return progression.CultivationState{}, false
+}
+
+// superPowerAt returns the SuperPowerState at a character's (system, path)
+// node, if it has one.
+func superPowerAt(c character.Character, system, path string) (progression.SuperPowerState, bool) {
+	for _, ps := range c.Power {
+		if ps.Name != system {
+			continue
+		}
+		for _, p := range ps.Powers {
+			if p.Name != path {
+				continue
+			}
+			if sp, ok := p.State.(progression.SuperPowerState); ok {
+				return sp, true
+			}
+		}
+	}
+	return progression.SuperPowerState{}, false
 }
 
 // realmByName finds a realm by name within an ordered realm slice.

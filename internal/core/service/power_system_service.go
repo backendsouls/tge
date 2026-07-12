@@ -19,8 +19,8 @@ func NewPowerSystemService(repo port.PowerSystemRepository) *PowerSystemService 
 }
 
 // CreateSystem validates the name and persists a new empty system.
-func (s *PowerSystemService) CreateSystem(ctx context.Context, name string) (progression.PowerSystem, error) {
-	ps, err := progression.NewPowerSystem(name)
+func (s *PowerSystemService) CreateSystem(ctx context.Context, name string, kind progression.PowerSystemType) (progression.PowerSystem, error) {
+	ps, err := progression.NewPowerSystem(name, kind)
 	if err != nil {
 		return progression.PowerSystem{}, err
 	}

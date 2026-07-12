@@ -420,8 +420,8 @@ func TestCLI_StatusPowerTree(t *testing.T) {
 		}
 	}
 	system := progression.PowerSystem{
-		Name: "Origin Cultivation",
-		Kind: progression.Cultivation,
+		Name:            "Origin Cultivation",
+		PowerSystemType: progression.Cultivation,
 		Powers: []progression.Power{
 			{Name: "Spirit", State: cult("Qi Condensation Realm", "Seventh Level")},
 			{Name: "Body", State: cult("Pink Muscle Realm", "Condensation Level")},

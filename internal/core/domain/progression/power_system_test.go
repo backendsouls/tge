@@ -8,7 +8,7 @@ import (
 
 func TestNewPowerSystem(t *testing.T) {
 	t.Run("creates a named system", func(t *testing.T) {
-		ps, err := NewPowerSystem("cosmology.Universe A Cultivation")
+		ps, err := NewPowerSystem("cosmology.Universe A Cultivation", "")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -21,7 +21,7 @@ func TestNewPowerSystem(t *testing.T) {
 	})
 
 	t.Run("rejects a blank name", func(t *testing.T) {
-		_, err := NewPowerSystem("  ")
+		_, err := NewPowerSystem("  ", "")
 		if !errors.Is(err, ErrInvalidSystemName) {
 			t.Fatalf("err = %v, want %v", err, ErrInvalidSystemName)
 		}
@@ -30,7 +30,7 @@ func TestNewPowerSystem(t *testing.T) {
 
 func TestPowerSystem_AddPower(t *testing.T) {
 	t.Run("adds root and nested powers forming a tree", func(t *testing.T) {
-		ps, _ := NewPowerSystem("cosmology.Universe A Cultivation")
+		ps, _ := NewPowerSystem("cosmology.Universe A Cultivation", "")
 		if err := ps.AddPower("Body", ""); err != nil {
 			t.Fatalf("add Body: %v", err)
 		}
@@ -54,7 +54,7 @@ func TestPowerSystem_AddPower(t *testing.T) {
 	})
 
 	t.Run("rejects a duplicate power name anywhere in the system", func(t *testing.T) {
-		ps, _ := NewPowerSystem("S")
+		ps, _ := NewPowerSystem("S", "")
 		_ = ps.AddPower("Body", "")
 		err := ps.AddPower("Body", "")
 		if !errors.Is(err, ErrPowerExists) {
@@ -63,7 +63,7 @@ func TestPowerSystem_AddPower(t *testing.T) {
 	})
 
 	t.Run("rejects an unknown parent", func(t *testing.T) {
-		ps, _ := NewPowerSystem("S")
+		ps, _ := NewPowerSystem("S", "")
 		err := ps.AddPower("Iron Skin", "Body")
 		if !errors.Is(err, ErrPowerParentNotFound) {
 			t.Fatalf("err = %v, want %v", err, ErrPowerParentNotFound)
@@ -71,7 +71,7 @@ func TestPowerSystem_AddPower(t *testing.T) {
 	})
 
 	t.Run("rejects a blank power name", func(t *testing.T) {
-		ps, _ := NewPowerSystem("S")
+		ps, _ := NewPowerSystem("S", "")
 		err := ps.AddPower("  ", "")
 		if !errors.Is(err, ErrInvalidPowerName) {
 			t.Fatalf("err = %v, want %v", err, ErrInvalidPowerName)

@@ -52,14 +52,14 @@ func TestPowerSystemService_CreateSystem(t *testing.T) {
 	repo := newFakePSRepo()
 	svc := service.NewPowerSystemService(repo)
 
-	ps, err := svc.CreateSystem(context.Background(), "Universe A Cultivation")
+	ps, err := svc.CreateSystem(context.Background(), "Universe A Cultivation", "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if ps.Name != "Universe A Cultivation" {
 		t.Errorf("Name = %q", ps.Name)
 	}
-	if _, err := svc.CreateSystem(context.Background(), "Universe A Cultivation"); !errors.Is(err, port.ErrPowerSystemExists) {
+	if _, err := svc.CreateSystem(context.Background(), "Universe A Cultivation", ""); !errors.Is(err, port.ErrPowerSystemExists) {
 		t.Fatalf("err = %v, want %v", err, port.ErrPowerSystemExists)
 	}
 }
@@ -68,7 +68,7 @@ func TestPowerSystemService_AddPower(t *testing.T) {
 	repo := newFakePSRepo()
 	svc := service.NewPowerSystemService(repo)
 	ctx := context.Background()
-	if _, err := svc.CreateSystem(ctx, "Universe A Cultivation"); err != nil {
+	if _, err := svc.CreateSystem(ctx, "Universe A Cultivation", ""); err != nil {
 		t.Fatal(err)
 	}
 

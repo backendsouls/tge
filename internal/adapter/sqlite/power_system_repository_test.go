@@ -68,7 +68,7 @@ func TestPowerSystemRepository_SaveAndLoadTree(t *testing.T) {
 		t.Fatalf("create: %v", err)
 	}
 
-	ps, _ := progression.NewPowerSystem("Universe A Cultivation")
+	ps, _ := progression.NewPowerSystem("Universe A Cultivation", "")
 	if err := ps.AddPower("Body", ""); err != nil {
 		t.Fatal(err)
 	}

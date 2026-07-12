@@ -16,6 +16,7 @@ import (
 type seedDeps struct {
 	species port.SpeciesService
 	realms  port.RealmService
+	systems port.PowerSystemService
 	rpg     cli.RPGServices
 }
 
@@ -39,7 +40,9 @@ func seedExists(err error) bool {
 		errors.Is(err, port.ErrEquipmentExists),
 		errors.Is(err, port.ErrQuestExists),
 		errors.Is(err, port.ErrRecipeExists),
+		errors.Is(err, port.ErrPowerSystemExists),
 		errors.Is(err, progression.ErrLevelNumberExists),
+		errors.Is(err, progression.ErrPowerExists),
 		errors.Is(err, rpg.ErrObjectiveOrderExists),
 		errors.Is(err, rpg.ErrIngredientExists):
 		return true
@@ -152,6 +155,28 @@ func seedCatalog(ctx context.Context, d seedDeps, cat config.Catalog) error {
 			}
 		}
 	}
+
+	for _, ps := range cat.PowerSystems {
+		if err := seed("powersystem "+ps.Name, second(d.systems.CreateSystem(ctx, ps.Name, progression.PowerSystemType(ps.Kind)))); err != nil {
+			return err
+		}
+		var seedPowers func(string, []config.PowerNode) error
+		seedPowers = func(parent string, powers []config.PowerNode) error {
+			for _, p := range powers {
+				if err := seed("powersystem "+ps.Name+" power "+p.Name, second(d.systems.AddPower(ctx, port.AddPowerInput{System: ps.Name, Name: p.Name, Parent: parent}))); err != nil {
+					return err
+				}
+				if err := seedPowers(p.Name, p.Children); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+		if err := seedPowers("", ps.Powers); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

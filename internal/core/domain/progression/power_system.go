@@ -15,23 +15,64 @@ var (
 	ErrPowerParentNotFound = errors.New("power system: parent power not found")
 )
 
-// PowerSystem is a named tree (forest) of powers. For example "cosmology.Universe A
-// Cultivation" might contain only a "Body" power, while another system contains
-// Body, Soul and Spirit, each with their own sub-powers.
-type PowerSystem struct {
-	Name   string
-	Kind   SystemKind // the family this system belongs to (defaults to Cultivation)
-	Powers []Power    // root powers
+// PowerSystemType identifies the family a power system belongs to. Different kinds
+// progress by different rules — a Cultivation system advances through realms and
+// levels, a Magic system will advance by its own mechanics — so a character's
+// per-node progress (PowerState) is kind-specific while the surrounding
+// PowerSystem stays general.
+type PowerSystemType string
+
+const (
+	// Cultivation is the realm/level progression kind.
+	Cultivation PowerSystemType = "Cultivation"
+	// Magic is a placeholder for a future, differently-progressing kind.
+	Magic PowerSystemType = "Magic"
+	// SuperPower is the new power system type.
+	SuperPower PowerSystemType = "SuperPower"
+)
+
+// Valid reports whether k is a known system kind.
+func (k PowerSystemType) Valid() bool {
+	switch k {
+	case Cultivation, Magic, SuperPower:
+		return true
+	}
+	return false
 }
 
-// NewPowerSystem validates and builds an empty power system of the Cultivation
-// kind, the default until other kinds (e.g. Magic) are authored.
-func NewPowerSystem(name string) (PowerSystem, error) {
+// PowerState is a character's progress at a single power node. Each PowerSystemType
+// supplies its own implementation (CultivationState today, a Magic state later),
+// which keeps a character's attained power (Character.Power) general over the
+// kind of system rather than tied to cultivation.
+type PowerState interface {
+	// Kind reports which system kind this state belongs to.
+	Kind() PowerSystemType
+	// Power reports the numerical progress of the state.
+	Power() float64
+}
+
+// PowerSystem is a named tree (forest) of powers. For example "cosmology.Universe A
+// Cultivation" might contain only a "Body" power, while another system contains
+// BodyCultivation, SoulCultivation and SpiritCultivation, each with their own sub-powers.
+type PowerSystem struct {
+	Name            string
+	PowerSystemType PowerSystemType // the family this system belongs to (defaults to Cultivation)
+	Powers          []Power         // root powers
+}
+
+// NewPowerSystem validates and builds an empty power system.
+func NewPowerSystem(name string, kind PowerSystemType) (PowerSystem, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return PowerSystem{}, ErrInvalidSystemName
 	}
-	return PowerSystem{Name: name, Kind: Cultivation}, nil
+	if string(kind) == "" {
+		kind = Cultivation
+	}
+	if !kind.Valid() {
+		return PowerSystem{}, fmt.Errorf("power system: invalid kind %q", kind)
+	}
+	return PowerSystem{Name: name, PowerSystemType: kind}, nil
 }
 
 // AddPower inserts a power into the system. With an empty parent the power

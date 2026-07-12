@@ -33,7 +33,7 @@ type PowerSystemRepository interface {
 
 // PowerSystemService is a driving port for power-system use cases.
 type PowerSystemService interface {
-	CreateSystem(ctx context.Context, name string) (progression.PowerSystem, error)
+	CreateSystem(ctx context.Context, name string, kind progression.PowerSystemType) (progression.PowerSystem, error)
 	AddPower(ctx context.Context, in AddPowerInput) (progression.PowerSystem, error)
 	GetSystem(ctx context.Context, name string) (progression.PowerSystem, error)
 	ListSystems(ctx context.Context) ([]progression.PowerSystem, error)

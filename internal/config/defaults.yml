@@ -110,3 +110,37 @@ catalog:
       inputs:
         - { item: "Spirit Herb", quantity: 2 }
         - { item: "Gold", quantity: 1 }
+
+  power_systems:
+    - name: "SuperPower"
+      kind: "SuperPower"
+      powers:
+        - name: "Physical Enhancements"
+          children:
+            - { name: "Super Strength" }
+            - { name: "Super Speed" }
+            - { name: "Invulnerability" }
+            - { name: "Enhanced Senses" }
+        - name: "Mental Abilities"
+          children:
+            - { name: "Telepathy" }
+            - { name: "Telekinesis" }
+            - { name: "Precognition" }
+            - { name: "Mind Control" }
+        - name: "Energy Manipulation"
+          children:
+            - { name: "Pyrokinesis" }
+            - { name: "Electrokinesis" }
+            - { name: "Energy Projection" }
+            - { name: "Force Fields" }
+        - name: "Biological Alteration"
+          children:
+            - { name: "Regeneration" }
+            - { name: "Shapeshifting" }
+            - { name: "Invisibility" }
+            - { name: "Elasticity" }
+        - name: "Reality Manipulation"
+          children:
+            - { name: "Teleportation" }
+            - { name: "Time Manipulation" }
+            - { name: "Gravity Control" }

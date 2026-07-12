@@ -8,7 +8,7 @@ import (
 
 func sampleSystems(t *testing.T) []progression.PowerSystem {
 	t.Helper()
-	ps, err := progression.NewPowerSystem("cosmology.Universe A progression.Cultivation")
+	ps, err := progression.NewPowerSystem("cosmology.Universe A progression.Cultivation", "")
 	if err != nil {
 		t.Fatal(err)
 	}

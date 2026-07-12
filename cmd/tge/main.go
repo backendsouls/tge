@@ -200,6 +200,7 @@ func run() int {
 	if err := seedCatalog(context.Background(), seedDeps{
 		species: speciesSvc,
 		realms:  realmSvc,
+		systems: psSvc,
 		rpg:     rpgSvcs,
 	}, defaults.Catalog); err != nil {
 		return fail(fmt.Errorf("seeding defaults: %w", err))

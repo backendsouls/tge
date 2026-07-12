@@ -34,8 +34,8 @@ func (r *PowerSystemRepository) Close() error {
 }
 
 // Create inserts an empty system, returning port.ErrPowerSystemExists if taken.
-func (r *PowerSystemRepository) Create(ctx context.Context, name string) error {
-	_, err := r.db.ExecContext(ctx, `INSERT INTO power_systems (name) VALUES (?)`, name)
+func (r *PowerSystemRepository) Create(ctx context.Context, name string, kind progression.PowerSystemType) error {
+	_, err := r.db.ExecContext(ctx, `INSERT INTO power_systems (name, kind) VALUES (?, ?)`, name, string(kind))
 	if err != nil {
 		if serr, ok := errors.AsType[*sqlitedrv.Error](err); ok {
 			switch serr.Code() {
@@ -50,8 +50,8 @@ func (r *PowerSystemRepository) Create(ctx context.Context, name string) error {
 
 // FindByName loads a system and its power tree, or port.ErrPowerSystemNotFound.
 func (r *PowerSystemRepository) FindByName(ctx context.Context, name string) (progression.PowerSystem, error) {
-	var found string
-	err := r.db.QueryRowContext(ctx, `SELECT name FROM power_systems WHERE name = ?`, name).Scan(&found)
+	var found, kind string
+	err := r.db.QueryRowContext(ctx, `SELECT name, kind FROM power_systems WHERE name = ?`, name).Scan(&found, &kind)
 	if errors.Is(err, sql.ErrNoRows) {
 		return progression.PowerSystem{}, fmt.Errorf("%w: %q", port.ErrPowerSystemNotFound, name)
 	}
@@ -59,7 +59,7 @@ func (r *PowerSystemRepository) FindByName(ctx context.Context, name string) (pr
 		return progression.PowerSystem{}, fmt.Errorf("find power system: %w", err)
 	}
 
-	ps := progression.PowerSystem{Name: found}
+	ps := progression.PowerSystem{Name: found, PowerSystemType: progression.PowerSystemType(kind)}
 	if err := r.loadPowers(ctx, &ps); err != nil {
 		return progression.PowerSystem{}, err
 	}
@@ -68,7 +68,7 @@ func (r *PowerSystemRepository) FindByName(ctx context.Context, name string) (pr
 
 // List returns all systems with their power trees, ordered by name.
 func (r *PowerSystemRepository) List(ctx context.Context) ([]progression.PowerSystem, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT name FROM power_systems ORDER BY name`)
+	rows, err := r.db.QueryContext(ctx, `SELECT name, kind FROM power_systems ORDER BY name`)
 	if err != nil {
 		return nil, fmt.Errorf("list power systems: %w", err)
 	}
@@ -76,11 +76,11 @@ func (r *PowerSystemRepository) List(ctx context.Context) ([]progression.PowerSy
 
 	var systems []progression.PowerSystem
 	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
+		var name, kind string
+		if err := rows.Scan(&name, &kind); err != nil {
 			return nil, fmt.Errorf("scan power system: %w", err)
 		}
-		systems = append(systems, progression.PowerSystem{Name: name})
+		systems = append(systems, progression.PowerSystem{Name: name, PowerSystemType: progression.PowerSystemType(kind)})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate power systems: %w", err)

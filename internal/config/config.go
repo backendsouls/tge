@@ -151,19 +151,33 @@ type Recipe struct {
 	Inputs []Ingredient `yaml:"inputs"`
 }
 
+// PowerNode is a node in a power system's tree.
+type PowerNode struct {
+	Name     string      `yaml:"name"`
+	Children []PowerNode `yaml:"children"`
+}
+
+// PowerSystemSeed defines a power system tree to seed.
+type PowerSystemSeed struct {
+	Name   string      `yaml:"name"`
+	Kind   string      `yaml:"kind"`
+	Powers []PowerNode `yaml:"powers"`
+}
+
 // Catalog is the starter content seeded into the store on startup.
 type Catalog struct {
-	Species     []Species   `yaml:"species"`
-	Realms      []Realm     `yaml:"realms"`
-	Classes     []Named     `yaml:"classes"`
-	Professions []Named     `yaml:"professions"`
-	Items       []Named     `yaml:"items"`
-	Abilities   []Named     `yaml:"abilities"`
-	Skills      []Named     `yaml:"skills"`
-	Effects     []Effect    `yaml:"effects"`
-	Equipment   []Equipment `yaml:"equipment"`
-	Quests      []Quest     `yaml:"quests"`
-	Recipes     []Recipe    `yaml:"recipes"`
+	Species      []Species         `yaml:"species"`
+	Realms       []Realm           `yaml:"realms"`
+	PowerSystems []PowerSystemSeed `yaml:"power_systems"`
+	Classes      []Named           `yaml:"classes"`
+	Professions  []Named           `yaml:"professions"`
+	Items        []Named           `yaml:"items"`
+	Abilities    []Named           `yaml:"abilities"`
+	Skills       []Named           `yaml:"skills"`
+	Effects      []Effect          `yaml:"effects"`
+	Equipment    []Equipment       `yaml:"equipment"`
+	Quests       []Quest           `yaml:"quests"`
+	Recipes      []Recipe          `yaml:"recipes"`
 }
 
 // SystemLog configures the author-facing system messages.

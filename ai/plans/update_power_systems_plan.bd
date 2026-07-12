@@ -1,0 +1,91 @@
+# Deep Implementation Plan: Universal Power System Framework
+
+After a deep review of the `tge-go` codebase (specifically the SQLite repositories, `CharacterService`, and Domain models) and the newly synthesized `abstract_structure.md`, it is clear that moving from a **Tree** to a **Directed Acyclic Graph (DAG)** and unifying state requires structural changes across all layers (DB, Ports, Domain, Service). 
+
+This is the comprehensive, step-by-step refactoring plan.
+
+---
+
+## Phase 1: Database Schema Migrations (SQLite)
+The current schema relies on a rigid `powers (system, name, parent)` table and disjoint progression tables (`character_cultivations`, `character_superpowers`).
+
+**Action Items:**
+1. **DAG Graph Structure:** 
+   - Create `power_nodes` table: `(system, id, name, category, base_power, stat_vector_json, material_req_json, drawbacks_json, tags_json)`.
+   - Create `power_relations` table: `(system, node_id, related_id, relation_type)`. `relation_type` will handle `parent`, `sibling`, and `exclusive`.
+2. **Unified Mechanics:**
+   - Create `character_mechanics` table: `(character, base_power, tier, is_awakened, alignment, traits_json, vows_json, energy_pools_json, spell_slots_json)`. This stores the character-wide modifiers (Zenkai, Awakenings, Alignments, D&D Spell Slots).
+3. **Node Progression:**
+   - Create `character_nodes` table: `(character, system, node_id, unlocked, level, progress)`. This replaces the disjoint cultivation/superpower tables and tracks which nodes in the DAG a character has unlocked.
+
+---
+
+## Phase 2: Domain Model Restructuring (`internal/core/domain/`)
+The rigid `Power` tree structure must be flattened, and the character progression must be enriched.
+
+**Action Items:**
+1. **Refactor `progression/power.go`**:
+   - Rename `Power` to `PowerNode`.
+   - Remove `Children []Power`. Instead, use `Parents []string`, `Siblings []string`, `MutuallyExclusive []string` to represent the DAG.
+   - Add new properties from the abstract: `Category`, `Tags`, `StatVector`, `MaterialReq`.
+2. **Refactor `progression/power_system.go`**:
+   - Change `PowerSystem.Powers []Power` to a flat map: `Nodes map[string]*PowerNode`. A map provides O(1) lookups needed for resolving DAG connections.
+3. **Introduce `MechanicState`**:
+   - Create `progression/mechanic_state.go` defining the `MechanicState` struct.
+   - Attach `MechanicState` directly to the `Character` domain entity (`character/character.go`).
+4. **Refactor `PowerState`**:
+   - Replace the `PowerState` interface with a concrete `NodeState` (unlocked, level, progress) attached to `PowerNode`s when instantiated on a character.
+
+---
+
+## Phase 3: Repository Pattern Updates (`internal/adapter/sqlite/`)
+The repositories must be entirely rewritten to handle JSON serialization and graph relations.
+
+**Action Items:**
+1. **Update `power_system_repository.go`**:
+   - Rewrite `SavePowers` to iterate the `Nodes` map, inserting into `power_nodes`, then inserting into `power_relations` for every parent/sibling link. Use `encoding/json` for tags and vectors.
+   - Rewrite `loadPowers` to select all nodes for a system, select all relations, and stitch the map together in memory.
+2. **Update `character_repository.go`**:
+   - Replace `SaveCultivation` and `SaveSuperPower` with `SaveNodeState(char, system, node_id, state)`.
+   - Add `SaveMechanicState(char, MechanicState)`.
+   - Update `loadAssociations` to hydrate the `Character.MechanicState` and their unlocked `PowerNodes`.
+
+---
+
+## Phase 4: Service Layer Refactoring (`internal/core/service/`)
+With the domain and DB modernized, the business logic must adapt.
+
+**Action Items:**
+1. **Refactor `CharacterService.syncPower()`**:
+   - Replace the rigid loop over cultivation/superpowers. 
+   - The new power calculation is: `(MechanicState.BasePower + Sum(UnlockedNodes.BasePower)) * MechanicState.VowsMultipliers * Species.Power`.
+2. **Generalize Progression Actions**:
+   - Replace `Cultivate()` and `AwakenSuperPower()` with `UnlockNode()` and `TrainNode()`. These methods will validate against `power_relations` (e.g., ensuring a character has unlocked all `Parents` before unlocking a new node).
+3. **Implement Post-Simulation Hooks**:
+   - Add hooks to update `MechanicState`:
+     - If HP < 5%, apply **Zenkai Boost** (increase `BasePower`).
+     - If HP == 1, trigger **Quirk Awakening** (`IsAwakened = true`).
+     - Apply **Truth Rebounds** if an action fails.
+
+---
+
+## Phase 5: The Contextual Combat Engine
+Combat can no longer just compare `total_power`. It must execute contextual rules.
+
+**Action Items:**
+1. **Create `internal/core/domain/combat/combat.go`**:
+   - Define `CombatContext` (`Environment`, `AmbientDensity`, `LocalHumeLevel`).
+2. **Implement `ExecuteAction(node, target, ctx)`**:
+   - **Environment Lethality**: Compare `Target.MechanicState.Tier` vs `ctx.AmbientDensity` (Tower of God).
+   - **Absolute Immunities**: E.g., Logia Intangibility vs Armament Haki.
+   - **Meta-Overrides**: The Matrix "Anomaly" rewriting target stats directly.
+
+---
+
+## Execution Strategy
+This refactor touches the absolute core of `tge-go`. The safest approach is:
+1. First, create the database migrations (Phase 1).
+2. Second, update the domain models (Phase 2).
+3. Third, fix the repository compile errors (Phase 3).
+4. Fourth, rewrite the service logic (Phase 4).
+5. Finally, implement the combat engine (Phase 5).
