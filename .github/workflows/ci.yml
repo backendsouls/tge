@@ -37,7 +37,7 @@ jobs:
     - name: Build
       run: go build -v -o ./bin/tge ./cmd/tge
 
-  test:
+  unit-test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -47,5 +47,14 @@ jobs:
         go-version: '1.26.2'
     - name: Run unit tests
       run: go test -v $(go list ./... | grep -v /test/functional)
+
+  functional-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.26.2'
     - name: Run functional tests
       run: go test -v ./test/functional/...
