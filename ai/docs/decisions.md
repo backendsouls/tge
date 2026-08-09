@@ -113,3 +113,9 @@ evolve existing ones. See [architecture.md](architecture.md#database-migrations)
 for the full setup; column-level schema changes (e.g. renaming the `power` column
 to match `PowerValue`, widening for multi-species) now go in new numbered
 migration files.
+
+## 7. GitOps and Semantic Versioning (Release Please)
+
+**Decision.** Replaced manual Git tags with Google's `release-please-action`.
+
+**Why.** Automates semantic versioning (SemVer) and changelog generation using Conventional Commits (`feat:`, `fix:`, etc.). It opens a "Release PR" accumulating all merged changes. Merging this PR instantly cuts a Git tag and a GitHub Release, which triggers GoReleaser to attach cross-platform binaries. This decouples merging features from publishing releases while eliminating manual version bookkeeping.
