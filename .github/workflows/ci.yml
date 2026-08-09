@@ -27,6 +27,7 @@ jobs:
         $(go env GOPATH)/bin/golangci-lint run --timeout=5m
 
   build:
+    needs: lint
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -38,6 +39,7 @@ jobs:
       run: go build -v -o ./bin/tge ./cmd/tge
 
   unit-test:
+    needs: build
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -49,6 +51,7 @@ jobs:
       run: go test -v $(go list ./... | grep -v /test/functional)
 
   functional-test:
+    needs: unit-test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
