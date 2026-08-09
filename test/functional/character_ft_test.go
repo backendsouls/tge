@@ -17,7 +17,7 @@ func (mockItem) FindByName(ctx context.Context, name string) (rpg.Item, error) {
 	return rpg.Item{Name: name}, nil
 }
 func (mockItem) List(ctx context.Context) ([]rpg.Item, error) { return nil, nil }
-func (mockItem) Save(ctx context.Context, i rpg.Item) error { return nil }
+func (mockItem) Save(ctx context.Context, i rpg.Item) error   { return nil }
 
 func TestFunctional_CharacterInventoryAndState(t *testing.T) {
 	ctx := context.Background()

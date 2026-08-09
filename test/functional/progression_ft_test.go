@@ -24,7 +24,7 @@ func (mockSpecies) FindByName(ctx context.Context, name string) (character.Speci
 	return character.Species{Name: name, Power: 1.0}, nil
 }
 func (mockSpecies) List(ctx context.Context) ([]character.Species, error) { return nil, nil }
-func (mockSpecies) Save(ctx context.Context, s character.Species) error { return nil }
+func (mockSpecies) Save(ctx context.Context, s character.Species) error   { return nil }
 
 func TestFunctional_ProgressionDAG(t *testing.T) {
 	ctx := context.Background()

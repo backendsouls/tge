@@ -276,7 +276,7 @@ func (s *CharacterService) PassTime(ctx context.Context, charName string, second
 	s.idle.CommitOfflineGains(&c)
 
 	c.NovelTime += seconds
-	
+
 	if err := s.chars.Save(ctx, c); err != nil {
 		return character.Character{}, err
 	}

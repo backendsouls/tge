@@ -149,6 +149,7 @@ func noArgsHelp(out io.Writer, args []string, cmdName string) bool {
 	}
 	return false
 }
+
 // App dispatches CLI commands to the application services.
 type App struct {
 	realms       port.RealmService
@@ -511,7 +512,7 @@ func (a *App) characterPassTime(ctx context.Context, args []string) int {
 	days := fs.Int64("days", 0, "days to pass")
 	hours := fs.Int64("hours", 0, "hours to pass")
 	minutes := fs.Int64("minutes", 0, "minutes to pass")
-	
+
 	if err := parseFlags(fs, args); err != nil {
 		if isHelpErr(err) {
 			return 0

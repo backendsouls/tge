@@ -28,7 +28,7 @@ func (s *IdleService) CommitOfflineGains(char *character.Character) {
 	if char.MechanicState.EnergyPools == nil {
 		char.MechanicState.EnergyPools = make(map[string]int)
 	}
-	
+
 	for k, v := range currentPools {
 		char.MechanicState.EnergyPools[k] = v
 	}
