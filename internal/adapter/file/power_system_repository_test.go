@@ -19,7 +19,7 @@ func TestPowerSystemRepository_SaveAndFind(t *testing.T) {
 	// Create a DAG system
 	sys, _ := powersystem.NewPowerSystem("Nasuverse", powersystem.Magic)
 	nodeA, _ := powersystem.NewPowerNode("Circuits", "Base", nil)
-	sys.AddNode(&nodeA)
+	_ = sys.AddNode(&nodeA)
 
 	// Save it to disk
 	err := repo.Save(ctx, sys)

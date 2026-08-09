@@ -20,7 +20,7 @@ func TestFunctional_MechanicStateEvolution(t *testing.T) {
 	)
 
 	// Create Character
-	charSvc.CreateCharacter(ctx, port.CreateCharacterInput{
+	_, _ = charSvc.CreateCharacter(ctx, port.CreateCharacterInput{
 		Name:    "Darth Vader",
 		Type:    string(character.MainCharacter),
 		Gender:  string(character.Male),
@@ -34,11 +34,11 @@ func TestFunctional_MechanicStateEvolution(t *testing.T) {
 	c.MechanicState.Tier = 5
 	c.MechanicState.BasePower = 1000.0
 	c.MechanicState.AddEnergyPool("The Force", 5000)
-	c.MechanicState.SetAlignment(-100.0) // Dark Side
+	_ = c.MechanicState.SetAlignment(-100.0) // Dark Side
 
 	// Recalculate power internally
 	c.CalculateTotalPower()
-	charRepo.Save(ctx, c)
+	_ = charRepo.Save(ctx, c)
 
 	// Reload and Verify
 	loaded, _ := charRepo.FindByName(ctx, "Darth Vader")

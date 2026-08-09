@@ -17,9 +17,7 @@ import (
 
 	"tge/internal/core/domain/character"
 	"tge/internal/core/domain/cultivation"
-	"tge/internal/core/domain/power"
 	"tge/internal/core/domain/powersystem"
-	"tge/internal/core/domain/superpower"
 	"tge/internal/core/port"
 	"tge/internal/logger"
 )
@@ -541,32 +539,6 @@ func (a *App) characterPassTime(ctx context.Context, args []string) int {
 // findCultivation returns the CultivationState at a character's (system, path)
 // node. Empty system/path match the first system and its node respectively.
 
-// resolveRealm returns the named realm, or the first listed realm when name is
-// empty. (The realm list is ordered by name; there is no tier ordering yet.)
-func (a *App) resolveRealm(ctx context.Context, name string) (cultivation.Realm, error) {
-	if name != "" {
-		return a.realms.GetRealm(ctx, name)
-	}
-	realms, err := a.realms.ListRealms(ctx)
-	if err != nil {
-		return cultivation.Realm{}, err
-	}
-	if len(realms) == 0 {
-		return cultivation.Realm{}, fmt.Errorf("no realms exist; add one with: tge realm add ...")
-	}
-	return realms[0], nil
-}
-
-// levelByNumber finds a realm's level by its number.
-func levelByNumber(r cultivation.Realm, number int) (cultivation.Level, bool) {
-	for _, l := range r.Levels {
-		if l.Number == number {
-			return l, true
-		}
-	}
-	return cultivation.Level{}, false
-}
-
 func (a *App) characterCreate(ctx context.Context, args []string) int {
 	fs := flag.NewFlagSet("character create", flag.ContinueOnError)
 	fs.SetOutput(a.err)
@@ -761,22 +733,6 @@ func (a *App) powerSystemShow(ctx context.Context, args []string) int {
 }
 
 // writePowerTree renders a power and its children with indentation.
-
-// writePowerState renders a character's progressed power node:
-// the node name, then its cultivation Realm/Level when the node carries a
-// CultivationState, or Tier when it is a SuperPowerState.
-func writePowerState(w io.Writer, p power.Power, depth int) {
-	indent := strings.Repeat("  ", depth)
-	_, _ = fmt.Fprintf(w, "%s- %s:\n", indent, p.Name)
-	if cs, ok := p.State.(cultivation.CultivationState); ok {
-		_, _ = fmt.Fprintf(w, "%s  - Realm: %s\n", indent, cs.Realm.Name)
-		_, _ = fmt.Fprintf(w, "%s  - Level: %s\n", indent, cs.Level.Name)
-		_, _ = fmt.Fprintf(w, "%s  - Breakthrough: %d/%d\n", indent, cs.Points, cs.Level.BreakthroughPoints)
-		_, _ = fmt.Fprintf(w, "%s  - Bottleneck: %d/%d\n", indent, cs.Bottleneck, cs.Level.BottleneckPoints)
-	} else if sp, ok := p.State.(superpower.SuperPowerState); ok {
-		_, _ = fmt.Fprintf(w, "%s  - Tier: %d (Power: x%g)\n", indent, sp.Tier, sp.Power())
-	}
-}
 
 const universeHelp = `tge universe — Manage universes
 

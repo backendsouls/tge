@@ -110,7 +110,7 @@ func (ps *PowerSystem) AddEdge(nodeID, targetID string, edgeType EdgeType) error
 
 	if edgeType == EdgeMutuallyExclusive {
 		_ = node.AddMutuallyExclusive(targetID)
-		targetNode, _ := ps.Nodes[targetID]
+		targetNode := ps.Nodes[targetID]
 		_ = targetNode.AddMutuallyExclusive(nodeID)
 	}
 

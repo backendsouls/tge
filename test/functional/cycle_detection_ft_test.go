@@ -17,10 +17,10 @@ func TestFunctional_CycleDetectionFT(t *testing.T) {
 	sysRepo := file.NewPowerSystemRepository(tempDir + "/systems")
 	sysSvc := service.NewPowerSystemService(sysRepo)
 
-	sysSvc.CreateSystem(ctx, "Alchemy", powersystem.Magic)
-	sysSvc.AddNode(ctx, port.AddNodeInput{System: "Alchemy", NodeID: "comprehension", Name: "Comprehension"})
-	sysSvc.AddNode(ctx, port.AddNodeInput{System: "Alchemy", NodeID: "deconstruction", Name: "Deconstruction"})
-	sysSvc.AddNode(ctx, port.AddNodeInput{System: "Alchemy", NodeID: "reconstruction", Name: "Reconstruction"})
+	_, _ = sysSvc.CreateSystem(ctx, "Alchemy", powersystem.Magic)
+	_, _ = sysSvc.AddNode(ctx, port.AddNodeInput{System: "Alchemy", NodeID: "comprehension", Name: "Comprehension"})
+	_, _ = sysSvc.AddNode(ctx, port.AddNodeInput{System: "Alchemy", NodeID: "deconstruction", Name: "Deconstruction"})
+	_, _ = sysSvc.AddNode(ctx, port.AddNodeInput{System: "Alchemy", NodeID: "reconstruction", Name: "Reconstruction"})
 
 	// Create valid chain: Comprehension -> Deconstruction -> Reconstruction
 	_, err := sysSvc.AddEdge(ctx, port.AddEdgeInput{System: "Alchemy", NodeID: "deconstruction", TargetID: "comprehension", EdgeType: powersystem.EdgeParent})

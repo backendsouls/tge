@@ -42,8 +42,8 @@ func TestPowerSystem_DAGValidation(t *testing.T) {
 	nodeA, _ := powersystem.NewPowerNode("Node A", "Base", nil)
 	nodeB, _ := powersystem.NewPowerNode("Node B", "Base", nil)
 
-	sys.AddNode(&nodeA)
-	sys.AddNode(&nodeB)
+	_ = sys.AddNode(&nodeA)
+	_ = sys.AddNode(&nodeB)
 
 	// Add A as parent to B
 	err := sys.AddEdge(nodeB.ID, nodeA.ID, powersystem.EdgeParent)

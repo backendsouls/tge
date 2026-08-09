@@ -7,19 +7,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sync"
 	"tge/internal/core/domain/character"
 	"tge/internal/core/port"
 )
 
 type CharacterRepository struct {
 	basePath string
-	mu       sync.RWMutex
 }
 
 // NewCharacterRepository creates a flat-file JSON repository for characters.
 func NewCharacterRepository(basePath string) *CharacterRepository {
-	os.MkdirAll(basePath, 0755)
+	_ = os.MkdirAll(basePath, 0755)
 	return &CharacterRepository{
 		basePath: basePath,
 	}

@@ -41,11 +41,11 @@ func TestFunctional_CharacterInventoryAndState(t *testing.T) {
 	}
 
 	// Give Items
-	charSvc.GiveItem(ctx, port.GiveItemInput{Character: "Kirito", Item: "Elucidator", Quantity: 1})
-	charSvc.GiveItem(ctx, port.GiveItemInput{Character: "Kirito", Item: "Healing Potion", Quantity: 5})
+	_, _ = charSvc.GiveItem(ctx, port.GiveItemInput{Character: "Kirito", Item: "Elucidator", Quantity: 1})
+	_, _ = charSvc.GiveItem(ctx, port.GiveItemInput{Character: "Kirito", Item: "Healing Potion", Quantity: 5})
 
-	// Stack existing items
-	charSvc.GiveItem(ctx, port.GiveItemInput{Character: "Kirito", Item: "Healing Potion", Quantity: 5})
+	// Add more of the same item
+	_, _ = charSvc.GiveItem(ctx, port.GiveItemInput{Character: "Kirito", Item: "Healing Potion", Quantity: 5})
 
 	// Verify State Persistence
 	c, err := charRepo.FindByName(ctx, "Kirito")

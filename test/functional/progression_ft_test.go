@@ -53,21 +53,21 @@ func TestFunctional_ProgressionDAG(t *testing.T) {
 	sysSvc.AddNode(ctx, port.AddNodeInput{System: "Nen", NodeID: "transmutation", Name: "Transmutation", Category: "Hatsu"})
 
 	// Add Edges (Ren requires Ten)
-	sysSvc.AddEdge(ctx, port.AddEdgeInput{System: "Nen", NodeID: "ren", TargetID: "ten", EdgeType: powersystem.EdgeParent})
+	_, _ = sysSvc.AddEdge(ctx, port.AddEdgeInput{System: "Nen", NodeID: "ren", TargetID: "ten", EdgeType: powersystem.EdgeParent})
 	// Hatsu requires Ren
-	sysSvc.AddEdge(ctx, port.AddEdgeInput{System: "Nen", NodeID: "enhancement", TargetID: "ren", EdgeType: powersystem.EdgeParent})
-	sysSvc.AddEdge(ctx, port.AddEdgeInput{System: "Nen", NodeID: "transmutation", TargetID: "ren", EdgeType: powersystem.EdgeParent})
+	_, _ = sysSvc.AddEdge(ctx, port.AddEdgeInput{System: "Nen", NodeID: "enhancement", TargetID: "ren", EdgeType: powersystem.EdgeParent})
+	_, _ = sysSvc.AddEdge(ctx, port.AddEdgeInput{System: "Nen", NodeID: "transmutation", TargetID: "ren", EdgeType: powersystem.EdgeParent})
 
 	// Make Enhancement and Transmutation mutually exclusive for this test scenario
 	sys, _ := sysRepo.FindByName(ctx, "Nen")
 	enhancementNode := sys.Nodes["enhancement"]
-	enhancementNode.AddMutuallyExclusive("transmutation")
+	_ = enhancementNode.AddMutuallyExclusive("transmutation")
 	transmutationNode := sys.Nodes["transmutation"]
-	transmutationNode.AddMutuallyExclusive("enhancement")
-	sysRepo.Save(ctx, sys)
+	_ = transmutationNode.AddMutuallyExclusive("enhancement")
+	_ = sysRepo.Save(ctx, sys)
 
 	// 4. Create the Character
-	charSvc.CreateCharacter(ctx, port.CreateCharacterInput{
+	_, _ = charSvc.CreateCharacter(ctx, port.CreateCharacterInput{
 		Name:    "Gon",
 		Type:    string(character.MainCharacter),
 		Gender:  string(character.Male),

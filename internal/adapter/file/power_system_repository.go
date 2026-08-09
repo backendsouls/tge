@@ -18,7 +18,7 @@ type PowerSystemRepository struct {
 // NewPowerSystemRepository creates a flat-file JSON repository.
 // Automatically creates the base directory if it doesn't exist.
 func NewPowerSystemRepository(basePath string) *PowerSystemRepository {
-	os.MkdirAll(basePath, 0755)
+	_ = os.MkdirAll(basePath, 0755)
 	return &PowerSystemRepository{
 		basePath: basePath,
 	}
