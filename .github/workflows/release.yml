@@ -1,4 +1,5 @@
 name: Release Pipeline
+run-name: "Release: ${{ github.event.pull_request.title || github.event.head_commit.message || github.ref_name }}"
 
 on:
   push:
