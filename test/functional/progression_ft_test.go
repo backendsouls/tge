@@ -47,10 +47,10 @@ func TestFunctional_ProgressionDAG(t *testing.T) {
 	}
 
 	// Add Nodes
-	sysSvc.AddNode(ctx, port.AddNodeInput{System: "Nen", NodeID: "ten", Name: "Ten", Category: "Basic"})
-	sysSvc.AddNode(ctx, port.AddNodeInput{System: "Nen", NodeID: "ren", Name: "Ren", Category: "Basic"})
-	sysSvc.AddNode(ctx, port.AddNodeInput{System: "Nen", NodeID: "enhancement", Name: "Enhancement", Category: "Hatsu"})
-	sysSvc.AddNode(ctx, port.AddNodeInput{System: "Nen", NodeID: "transmutation", Name: "Transmutation", Category: "Hatsu"})
+	_, _ = sysSvc.AddNode(ctx, port.AddNodeInput{System: "Nen", NodeID: "ten", Name: "Ten", Category: "Basic"})
+	_, _ = sysSvc.AddNode(ctx, port.AddNodeInput{System: "Nen", NodeID: "ren", Name: "Ren", Category: "Basic"})
+	_, _ = sysSvc.AddNode(ctx, port.AddNodeInput{System: "Nen", NodeID: "enhancement", Name: "Enhancement", Category: "Hatsu"})
+	_, _ = sysSvc.AddNode(ctx, port.AddNodeInput{System: "Nen", NodeID: "transmutation", Name: "Transmutation", Category: "Hatsu"})
 
 	// Add Edges (Ren requires Ten)
 	_, _ = sysSvc.AddEdge(ctx, port.AddEdgeInput{System: "Nen", NodeID: "ren", TargetID: "ten", EdgeType: powersystem.EdgeParent})
