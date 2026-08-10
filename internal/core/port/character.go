@@ -21,6 +21,7 @@ type CreateCharacterInput struct {
 	Species    string
 	Class      string
 	Profession string
+	Systems    []string
 }
 
 // GiveItemInput adds a quantity of an item to a character's inventory.
@@ -35,6 +36,12 @@ type TrainNodeInput struct {
 	Character string
 	System    string
 	NodeID    string
+}
+
+// AddPowerInput requests adding a power system to a character.
+type AddPowerInput struct {
+	Character string
+	System    string
 }
 
 // CharacterRepository is a driven port persisting characters keyed by name.
@@ -60,7 +67,7 @@ type CharacterService interface {
 
 	// TrainNode attempts to progress or unlock a node within a character's power system graph.
 	TrainNode(ctx context.Context, in TrainNodeInput) (character.Character, error)
-
-	AssignIdleActivity(ctx context.Context, charName string, activity string) (character.Character, error)
+	AddPower(ctx context.Context, in AddPowerInput) (character.Character, error)
+	AssignIdleActivity(ctx context.Context, charName string, systemName string, powerName string, duration float64) (character.Character, error)
 	PassTime(ctx context.Context, charName string, seconds int64) (character.Character, error)
 }

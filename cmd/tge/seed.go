@@ -80,7 +80,6 @@ func seedCatalog(ctx context.Context, d seedDeps, cat config.Catalog) error {
 			PowerAdder:             r.PowerAdder,
 			LifespanMultiplier:     r.LifespanMultiplier,
 			LifespanAdder:          r.LifespanAdder,
-			BottleneckPoints:       r.BottleneckPoints,
 			MaxLevels:              r.MaxLevels,
 			MainCharacterMaxLevels: r.MainCharacterMaxLevels,
 		}))); err != nil {
@@ -93,7 +92,6 @@ func seedCatalog(ctx context.Context, d seedDeps, cat config.Catalog) error {
 					Number:             l.Number,
 					Name:               l.Name,
 					BreakthroughPoints: l.BreakthroughPoints,
-					BottleneckPoints:   l.BottleneckPoints,
 				}))); err != nil {
 				return err
 			}
@@ -230,7 +228,6 @@ func realmLevels(r config.Realm) []config.Level {
 			Number:             i,
 			Name:               levelName(i),
 			BreakthroughPoints: r.LevelBreakthroughPoints,
-			BottleneckPoints:   r.LevelBottleneckPoints,
 		})
 	}
 	return levels

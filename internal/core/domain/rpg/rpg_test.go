@@ -15,7 +15,7 @@ func TestNewStats(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	sum := s.Add(rpg.BaseStats())
-	if sum.STR != 6 || sum.LUK != 13 {
+	if sum.STR != 1.65 || sum.LUK != 8.65 {
 		t.Errorf("Add mismatch: %+v", sum)
 	}
 }

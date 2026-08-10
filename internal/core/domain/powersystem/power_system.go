@@ -19,11 +19,13 @@ const (
 	Cultivation PowerSystemType = "Cultivation"
 	Magic       PowerSystemType = "Magic"
 	SuperPower  PowerSystemType = "SuperPower"
+	Reiatsu     PowerSystemType = "Reiatsu"
+	Gamer       PowerSystemType = "Gamer"
 )
 
 func (k PowerSystemType) Valid() bool {
 	switch k {
-	case Cultivation, Magic, SuperPower:
+	case Cultivation, Magic, SuperPower, Reiatsu, Gamer:
 		return true
 	}
 	return false

@@ -13,7 +13,6 @@ func TestNewRealm(t *testing.T) {
 			PowerAdder:         10,
 			LifespanMultiplier: 5,
 			LifespanAdder:      100,
-			BottleneckPoints:   250,
 		})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -34,22 +33,12 @@ func TestNewRealm(t *testing.T) {
 		if r.LifespanAdder != 100 {
 			t.Errorf("LifespanAdder = %v, want %v", r.LifespanAdder, 100.0)
 		}
-		if r.BottleneckPoints != 250 {
-			t.Errorf("BottleneckPoints = %v, want %v", r.BottleneckPoints, 250)
-		}
 	})
 
 	t.Run("rejects an empty name", func(t *testing.T) {
 		_, err := NewRealm(RealmConfig{Name: "  "})
 		if !errors.Is(err, ErrInvalidName) {
 			t.Fatalf("err = %v, want %v", err, ErrInvalidName)
-		}
-	})
-
-	t.Run("rejects negative bottleneck points", func(t *testing.T) {
-		_, err := NewRealm(RealmConfig{Name: "Foundation", BottleneckPoints: -1})
-		if !errors.Is(err, ErrInvalidPoints) {
-			t.Fatalf("err = %v, want %v", err, ErrInvalidPoints)
 		}
 	})
 

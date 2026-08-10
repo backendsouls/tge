@@ -1,0 +1,66 @@
+{
+  "Name": "Silva",
+  "Type": "MainCharacter",
+  "Gender": "Male",
+  "Species": [
+    {
+      "Name": "Human",
+      "Power": 1,
+      "Lifespan": 80,
+      "DefaultGender": "Male"
+    }
+  ],
+  "Systems": [
+    "Cultivation"
+  ],
+  "PowerValue": "1",
+  "MechanicState": {
+    "Tier": 0,
+    "BasePower": 1,
+    "IsAwakened": false,
+    "Alignment": 0,
+    "EnergyPools": {},
+    "SpellSlots": {},
+    "PermanentTraits": [],
+    "Vows": []
+  },
+  "UnlockedNodes": [],
+  "Mortal": {
+    "Age": 16,
+    "Lifespan": 80
+  },
+  "Class": {
+    "Name": "",
+    "Description": "",
+    "Grade": ""
+  },
+  "Profession": {
+    "Name": "",
+    "Description": "",
+    "Grade": ""
+  },
+  "Stats": {
+    "STR": 0.65,
+    "AGI": 0.65,
+    "INT": 0.65,
+    "VIT": 0.65,
+    "DEX": 0.65,
+    "WIS": 0.65,
+    "CHA": 0.65,
+    "LUK": 0.65
+  },
+  "Inventory": {
+    "Items": null
+  },
+  "IdleState": {
+    "start_time": 0,
+    "active_activity": "",
+    "rates": {
+      "skill_points_per_hour": 0,
+      "cultivation_points_per_hour": 0,
+      "ability_points_per_hour": 0,
+      "profession_points_per_hour": 0
+    }
+  },
+  "NovelTime": 0
+}

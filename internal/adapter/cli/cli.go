@@ -12,6 +12,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 	"text/tabwriter"
 
@@ -290,7 +291,6 @@ func (a *App) realmAddLevel(ctx context.Context, args []string) int {
 	fs.StringVar(&in.Name, "name", "", "level name (e.g. \"First Level\")")
 	fs.StringVar(&in.Name, "n", "", "level name (shorthand)")
 	fs.IntVar(&in.BreakthroughPoints, "breakthrough", 0, "breakthrough points to advance to the next level")
-	fs.IntVar(&in.BottleneckPoints, "bottleneck", 0, "bottleneck points lost when a breakthrough fails")
 	if err := parseFlags(fs, args); err != nil {
 		if isHelpErr(err) {
 			return 0
@@ -329,8 +329,8 @@ func (a *App) realmShow(ctx context.Context, args []string) int {
 	}
 	_, _ = fmt.Fprintf(a.out, "  Levels (%d defined; %s):\n", len(r.Levels), caps)
 	for _, l := range r.Levels {
-		_, _ = fmt.Fprintf(a.out, "    %d. %s (breakthrough %d, bottleneck %d)\n",
-			l.Number, l.Name, l.BreakthroughPoints, l.BottleneckPoints)
+		_, _ = fmt.Fprintf(a.out, "    %d. %s (breakthrough %d)\n",
+			l.Number, l.Name, l.BreakthroughPoints)
 	}
 	return 0
 }
@@ -354,7 +354,6 @@ func (a *App) realmAdd(ctx context.Context, args []string) int {
 	fs.Float64Var(&cfg.PowerAdder, "power-add", 0, "power adder (b in ax+b)")
 	fs.Float64Var(&cfg.LifespanMultiplier, "lifespan-mult", 0, "lifespan multiplier (a in ax+b)")
 	fs.Float64Var(&cfg.LifespanAdder, "lifespan-add", 0, "lifespan adder (b in ax+b)")
-	fs.IntVar(&cfg.BottleneckPoints, "bottleneck", 0, "realm-wide bottleneck points")
 	fs.IntVar(&cfg.MaxLevels, "max-levels", 0, "max levels a normal character may reach (0 = unlimited)")
 	fs.IntVar(&cfg.MainCharacterMaxLevels, "max-levels-main", 0, "max levels the main character may reach (0 = same as --max-levels)")
 	if err := parseFlags(fs, args); err != nil {
@@ -383,13 +382,12 @@ func (a *App) realmList(ctx context.Context) int {
 	}
 
 	tw := tabwriter.NewWriter(a.out, 0, 2, 2, ' ', 0)
-	_, _ = fmt.Fprintln(tw, "NAME\tPOWER(ax+b)\tLIFESPAN(ax+b)\tBOTTLENECK\tLEVELS\tMAX(normal/main)")
+	_, _ = fmt.Fprintln(tw, "NAME\tPOWER(ax+b)\tLIFESPAN(ax+b)\tLEVELS\tMAX(normal/main)")
 	for _, r := range realms {
-		_, _ = fmt.Fprintf(tw, "%s\t%gx+%g\t%gx+%g\t%d\t%d\t%s/%s\n",
+		_, _ = fmt.Fprintf(tw, "%s\t%gx+%g\t%gx+%g\t%d\t%s/%s\n",
 			r.Name,
 			r.PowerMultiplier, r.PowerAdder,
 			r.LifespanMultiplier, r.LifespanAdder,
-			r.BottleneckPoints,
 			len(r.Levels),
 			levelCap(r.MaxLevelsFor(false)), levelCap(r.MaxLevelsFor(true)),
 		)
@@ -411,6 +409,7 @@ Usage:
 
 Commands:
   create       Create a new character
+  add-power    Add a power system to a character
   list         List all characters
   clean        Soft delete all characters
   give-item    Give an item to a character
@@ -430,6 +429,8 @@ func (a *App) runCharacter(ctx context.Context, args []string) int {
 		return 0
 	case "create":
 		return a.characterCreate(ctx, args[1:])
+	case "add-power":
+		return a.characterAddPower(ctx, args[1:])
 	case "list":
 		if noArgsHelp(a.out, args[1:], "character list") {
 			return 0
@@ -480,7 +481,12 @@ func (a *App) characterIdle(ctx context.Context, args []string) int {
 	fs.SetOutput(a.err)
 	charName := fs.String("name", "", "character name")
 	fs.StringVar(charName, "n", "", "character name (shorthand)")
-	activity := fs.String("activity", "", "activity to assign (e.g. 'rest', 'secluded_cultivation', 'none')")
+	systemName := fs.String("system", "", "power system to idle")
+	fs.StringVar(systemName, "s", "", "power system to idle (shorthand)")
+	powerName := fs.String("power", "", "power node/type to idle")
+	fs.StringVar(powerName, "p", "", "power node/type to idle (shorthand)")
+	timeHours := fs.Float64("time", 0, "time to idle in hours (default 0 for indefinite)")
+	fs.Float64Var(timeHours, "t", 0, "time to idle in hours (shorthand)")
 	if err := parseFlags(fs, args); err != nil {
 		if isHelpErr(err) {
 			return 0
@@ -491,14 +497,22 @@ func (a *App) characterIdle(ctx context.Context, args []string) int {
 		_, _ = fmt.Fprintln(a.err, "character name is required")
 		return 2
 	}
-	c, err := a.characters.AssignIdleActivity(ctx, *charName, *activity)
+	c, err := a.characters.AssignIdleActivity(ctx, *charName, *systemName, *powerName, *timeHours)
 	if err != nil {
 		return a.fail(err)
 	}
-	if *activity == "" {
-		*activity = "none"
+	if *systemName == "" {
+		*systemName = "none"
 	}
-	_, _ = fmt.Fprintf(a.out, "assigned activity %q to character %q\n", *activity, c.Name)
+	if *systemName != "none" {
+		if *timeHours > 0 {
+			_, _ = fmt.Fprintf(a.out, "idling %q: %q for character %q for %g hour(s)\n", *systemName, *powerName, c.Name, *timeHours)
+		} else {
+			_, _ = fmt.Fprintf(a.out, "idling %q: %q for character %q indefinitely\n", *systemName, *powerName, c.Name)
+		}
+	} else {
+		_, _ = fmt.Fprintf(a.out, "cleared idle slots for character %q\n", c.Name)
+	}
 	return 0
 }
 
@@ -539,6 +553,34 @@ func (a *App) characterPassTime(ctx context.Context, args []string) int {
 // findCultivation returns the CultivationState at a character's (system, path)
 // node. Empty system/path match the first system and its node respectively.
 
+func (a *App) characterAddPower(ctx context.Context, args []string) int {
+	fs := flag.NewFlagSet("character add-power", flag.ContinueOnError)
+	fs.SetOutput(a.err)
+	var in port.AddPowerInput
+	fs.StringVar(&in.Character, "character", "", "character name")
+	fs.StringVar(&in.Character, "c", "", "character name (shorthand)")
+	fs.StringVar(&in.System, "system", "", "power system name")
+	fs.StringVar(&in.System, "power", "", "power system name (alias)")
+	fs.StringVar(&in.System, "p", "", "power system name (shorthand)")
+	if err := parseFlags(fs, args); err != nil {
+		if isHelpErr(err) {
+			return 0
+		}
+		return 2
+	}
+	if in.Character == "" || in.System == "" {
+		_, _ = fmt.Fprintln(a.err, "--character and --power are required")
+		return 2
+	}
+
+	c, err := a.characters.AddPower(ctx, in)
+	if err != nil {
+		return a.fail(err)
+	}
+	_, _ = fmt.Fprintf(a.out, "added power %q to character %q\n", in.System, c.Name)
+	return 0
+}
+
 func (a *App) characterCreate(ctx context.Context, args []string) int {
 	fs := flag.NewFlagSet("character create", flag.ContinueOnError)
 	fs.SetOutput(a.err)
@@ -552,6 +594,8 @@ func (a *App) characterCreate(ctx context.Context, args []string) int {
 	fs.StringVar(&in.Class, "class", "", "character class (optional; must exist)")
 	fs.StringVar(&in.Profession, "profession", "", "character profession (optional; must exist)")
 	fs.Var(&systems, "system", "power system the character belongs to (repeatable)")
+	fs.Var(&systems, "power", "power system the character belongs to (repeatable, alias)")
+	fs.Var(&systems, "p", "power system the character belongs to (shorthand)")
 	if err := parseFlags(fs, args); err != nil {
 		if isHelpErr(err) {
 			return 0
@@ -559,6 +603,7 @@ func (a *App) characterCreate(ctx context.Context, args []string) int {
 		return 2
 	}
 
+	in.Systems = systems
 	c, err := a.characters.CreateCharacter(ctx, in)
 	if err != nil {
 		return a.fail(err)
@@ -616,25 +661,82 @@ func (a *App) status(ctx context.Context, args []string) int {
 	}
 
 	_, _ = fmt.Fprintf(a.out, "%s  (%s, %s)\n", c.Name, c.Gender, speciesName(c.Species))
-	_, _ = fmt.Fprintf(a.out, "  Power: %s\n", c.PowerValue)
 	_, _ = fmt.Fprintf(a.out, "  Age %d/%d\n", c.Mortal.Age, c.Mortal.Lifespan)
+	_, _ = fmt.Fprintf(a.out, "  Power: %s\n", c.PowerValue)
+	hasGamer := false
+	if len(c.Systems) > 0 {
+		for _, sysName := range c.Systems {
+			_, _ = fmt.Fprintf(a.out, "  %s:\n", sysName)
+			ps, err := a.powerSystems.GetSystem(ctx, sysName)
+			if err == nil {
+				if string(ps.PowerSystemType) == "Gamer" {
+					hasGamer = true
+				}
+				roots := []string{}
+				for _, node := range ps.Nodes {
+					if len(node.Parents) == 0 {
+						roots = append(roots, node.Name)
+					}
+				}
+				sort.Strings(roots)
+				for _, root := range roots {
+					baseline := "Unawakened"
+					if string(ps.PowerSystemType) == "Cultivation" {
+						baseline = "Mortal"
+					}
+					levelStr := baseline
+					nodeID := strings.ToLower(strings.ReplaceAll(root, " ", "_"))
+					for _, prog := range c.UnlockedNodes {
+						if prog.System == sysName && prog.NodeID == nodeID {
+							if prog.Level > 0 {
+								levelStr = fmt.Sprintf("Level %d", prog.Level)
+							}
+						}
+					}
+					_, _ = fmt.Fprintf(a.out, "    - %s: %s\n", root, levelStr)
+				}
+			}
+		}
+	}
 	if c.Class.Name != "" {
 		_, _ = fmt.Fprintf(a.out, "  Class: %s\n", c.Class.Name)
 	}
 	if c.Profession.Name != "" {
 		_, _ = fmt.Fprintf(a.out, "  Profession: %s\n", c.Profession.Name)
 	}
-	if c.IdleState.ActiveActivity != "" && c.IdleState.ActiveActivity != "none" {
-		_, _ = fmt.Fprintf(a.out, "  Activity: %s\n", c.IdleState.ActiveActivity)
+	if len(c.UnlockedNodes) > 0 {
+		_, _ = fmt.Fprintf(a.out, "  Nodes:\n")
+		for _, node := range c.UnlockedNodes {
+			_, _ = fmt.Fprintf(a.out, "    %s: %s (Lv %d, Progress: %.1f/%.1f)\n",
+				node.System, node.NodeID, node.Level, node.Progress, node.CalculateBreakthrough())
+		}
+	}
+
+	if len(c.IdleState.Slots) > 0 {
+		totalSlots := c.IdleState.TotalSlots
+		if totalSlots <= 0 {
+			totalSlots = 1
+		}
+		_, _ = fmt.Fprintf(a.out, "  Active Idle Slots (%d/%d):\n", len(c.IdleState.Slots), totalSlots)
+		for i, slot := range c.IdleState.Slots {
+			if slot.Duration > 0 {
+				_, _ = fmt.Fprintf(a.out, "    [%d] %s: %s (%.1f hours left)\n", i+1, slot.System, slot.Power, slot.Duration)
+			} else {
+				_, _ = fmt.Fprintf(a.out, "    [%d] %s: %s (indefinite)\n", i+1, slot.System, slot.Power)
+			}
+		}
 	}
 	pools := c.CurrentEnergyPools(c.NovelTime)
 	if len(pools) > 0 {
-		_, _ = fmt.Fprintf(a.out, "  Pools:\n")
+		_, _ = fmt.Fprintf(a.out, "  Points:\n")
 		for k, v := range pools {
-			_, _ = fmt.Fprintf(a.out, "    %s: %d\n", k, v)
+			displayName := strings.ReplaceAll(k, "_", " ")
+			_, _ = fmt.Fprintf(a.out, "    %s: %d\n", displayName, v)
 		}
 	}
-	_, _ = fmt.Fprintf(a.out, "  Stats:%s\n", formatStats(c.Stats))
+	if hasGamer {
+		_, _ = fmt.Fprintf(a.out, "  Stats:%s\n", formatStats(c.Stats))
+	}
 	return 0
 }
 
@@ -728,8 +830,68 @@ func (a *App) powerSystemList(ctx context.Context) int {
 }
 
 func (a *App) powerSystemShow(ctx context.Context, args []string) int {
-	_, _ = fmt.Fprintln(a.err, "powersystem show is temporarily disabled due to mechanic state refactor")
-	return 1
+	fs := flag.NewFlagSet("powersystem show", flag.ContinueOnError)
+	fs.SetOutput(a.err)
+	name := fs.String("name", "", "power system name")
+	if err := parseFlags(fs, args); err != nil {
+		if isHelpErr(err) {
+			return 0
+		}
+		return 2
+	}
+	if *name == "" {
+		_, _ = fmt.Fprintln(a.err, "a name is required (--name)")
+		return 2
+	}
+
+	ps, err := a.powerSystems.GetSystem(ctx, *name)
+	if err != nil {
+		return a.fail(err)
+	}
+
+	_, _ = fmt.Fprintln(a.out, ps.Name)
+
+	children := make(map[string][]string)
+	for id, node := range ps.Nodes {
+		if len(node.Parents) == 0 {
+			children[""] = append(children[""], id)
+		}
+		seenParent := make(map[string]bool)
+		for _, p := range node.Parents {
+			if !seenParent[p] {
+				seenParent[p] = true
+				children[p] = append(children[p], id)
+			}
+		}
+	}
+
+	for k := range children {
+		sort.Strings(children[k])
+	}
+
+	var printNode func(id string, depth int)
+	visited := make(map[string]bool)
+	printNode = func(id string, depth int) {
+		node := ps.Nodes[id]
+		indent := strings.Repeat("  ", depth)
+
+		if visited[id] {
+			_, _ = fmt.Fprintf(a.out, "%s- %s (see above)\n", indent, node.Name)
+			return
+		}
+		visited[id] = true
+
+		_, _ = fmt.Fprintf(a.out, "%s- %s\n", indent, node.Name)
+		for _, childID := range children[id] {
+			printNode(childID, depth+1)
+		}
+	}
+
+	for _, rootID := range children[""] {
+		printNode(rootID, 1)
+	}
+
+	return 0
 }
 
 // writePowerTree renders a power and its children with indentation.

@@ -50,14 +50,13 @@ func (s *RealmService) AddLevel(ctx context.Context, in port.AddLevelInput) (cul
 	if err != nil {
 		return cultivation.Realm{}, err
 	}
-	if err := r.AddLevel(in.Number, in.Name, in.BreakthroughPoints, in.BottleneckPoints); err != nil {
+	if err := r.AddLevel(in.Number, in.Name, in.BreakthroughPoints); err != nil {
 		return cultivation.Realm{}, err
 	}
 	level := cultivation.Level{
 		Number:             in.Number,
 		Name:               in.Name,
 		BreakthroughPoints: in.BreakthroughPoints,
-		BottleneckPoints:   in.BottleneckPoints,
 	}
 	if err := s.repo.AddLevel(ctx, in.Realm, level); err != nil {
 		return cultivation.Realm{}, err

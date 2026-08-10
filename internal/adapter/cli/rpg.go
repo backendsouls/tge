@@ -464,19 +464,19 @@ func (a *App) printNamed(name, description string) {
 
 // bindStatFlags binds the eight stat attributes to flags on fs.
 func bindStatFlags(fs *flag.FlagSet, s *rpg.Stats) {
-	fs.IntVar(&s.STR, "str", 0, "Strength")
-	fs.IntVar(&s.AGI, "agi", 0, "Agility")
-	fs.IntVar(&s.INT, "int", 0, "Intelligence")
-	fs.IntVar(&s.VIT, "vit", 0, "Vitality")
-	fs.IntVar(&s.DEX, "dex", 0, "Dexterity")
-	fs.IntVar(&s.WIS, "wis", 0, "Wisdom")
-	fs.IntVar(&s.CHA, "cha", 0, "Charisma")
-	fs.IntVar(&s.LUK, "luk", 0, "Luck")
+	fs.Float64Var(&s.STR, "str", 0, "Strength")
+	fs.Float64Var(&s.AGI, "agi", 0, "Agility")
+	fs.Float64Var(&s.INT, "int", 0, "Intelligence")
+	fs.Float64Var(&s.VIT, "vit", 0, "Vitality")
+	fs.Float64Var(&s.DEX, "dex", 0, "Dexterity")
+	fs.Float64Var(&s.WIS, "wis", 0, "Wisdom")
+	fs.Float64Var(&s.CHA, "cha", 0, "Charisma")
+	fs.Float64Var(&s.LUK, "luk", 0, "Luck")
 }
 
 // formatStats renders a stat block multiline.
 func formatStats(s rpg.Stats) string {
-	return fmt.Sprintf("\n   STR: %d\n   AGI: %d\n   INT: %d\n   VIT: %d\n   DEX: %d\n   WIS: %d\n   CHA: %d\n   LUK: %d",
+	return fmt.Sprintf("\n   STR: %g\n   AGI: %g\n   INT: %g\n   VIT: %g\n   DEX: %g\n   WIS: %g\n   CHA: %g\n   LUK: %g",
 		s.STR, s.AGI, s.INT, s.VIT, s.DEX, s.WIS, s.CHA, s.LUK)
 }
 

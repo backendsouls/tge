@@ -37,20 +37,19 @@ func (r *RealmRepository) Close() error {
 
 // Save inserts a realm, returning port.ErrRealmExists if the name is taken.
 func (r *RealmRepository) Save(ctx context.Context, realm cultivation.Realm) error {
-	const q = `
-INSERT INTO realms (
-	name, power_multiplier, power_adder,
-	lifespan_multiplier, lifespan_adder,
-	bottleneck_points, max_levels, main_max_levels, tier
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	const q = `INSERT INTO realms (
+	name, tier, power_multiplier, power_adder, lifespan_multiplier, lifespan_adder,
+	max_levels, main_max_levels
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := r.db.ExecContext(ctx, q,
-		realm.Name, realm.PowerMultiplier, realm.PowerAdder,
+		realm.Name, realm.Tier, realm.PowerMultiplier, realm.PowerAdder,
 		realm.LifespanMultiplier, realm.LifespanAdder,
-		realm.BottleneckPoints, realm.MaxLevels, realm.MainCharacterMaxLevels, realm.Tier,
+		realm.MaxLevels, realm.MainCharacterMaxLevels,
 	)
 	if err != nil {
-		if serr, ok := errors.AsType[*sqlitedrv.Error](err); ok {
+		var serr *sqlitedrv.Error
+		if errors.As(err, &serr) {
 			switch serr.Code() {
 			case sqlitelib.SQLITE_CONSTRAINT_PRIMARYKEY, sqlitelib.SQLITE_CONSTRAINT_UNIQUE:
 				return fmt.Errorf("%w: %q", port.ErrRealmExists, realm.Name)
@@ -66,7 +65,7 @@ func (r *RealmRepository) FindByName(ctx context.Context, name string) (cultivat
 	const q = `
 SELECT name, power_multiplier, power_adder,
        lifespan_multiplier, lifespan_adder,
-       bottleneck_points, max_levels, main_max_levels, tier
+       max_levels, main_max_levels, tier
 FROM realms WHERE name = ?`
 
 	realm, err := scanRealm(r.db.QueryRowContext(ctx, q, name))
@@ -85,10 +84,11 @@ FROM realms WHERE name = ?`
 // AddLevel inserts an ordered level into a realm, returning
 // cultivation.ErrLevelNumberExists if the number is already used there.
 func (r *RealmRepository) AddLevel(ctx context.Context, realm string, l cultivation.Level) error {
-	const q = `INSERT INTO realm_levels (realm, number, name, breakthrough_points, bottleneck_points) VALUES (?, ?, ?, ?, ?)`
-	_, err := r.db.ExecContext(ctx, q, realm, l.Number, l.Name, l.BreakthroughPoints, l.BottleneckPoints)
+	const q = `INSERT INTO realm_levels (realm, number, name, breakthrough_points) VALUES (?, ?, ?, ?)`
+	_, err := r.db.ExecContext(ctx, q, realm, l.Number, l.Name, l.BreakthroughPoints)
 	if err != nil {
-		if serr, ok := errors.AsType[*sqlitedrv.Error](err); ok {
+		var serr *sqlitedrv.Error
+		if errors.As(err, &serr) {
 			switch serr.Code() {
 			case sqlitelib.SQLITE_CONSTRAINT_PRIMARYKEY, sqlitelib.SQLITE_CONSTRAINT_UNIQUE:
 				return fmt.Errorf("%w: %d", cultivation.ErrLevelNumberExists, l.Number)
@@ -102,7 +102,7 @@ func (r *RealmRepository) AddLevel(ctx context.Context, realm string, l cultivat
 // loadLevels populates a realm's levels ordered by number.
 func (r *RealmRepository) loadLevels(ctx context.Context, realm *cultivation.Realm) error {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT number, name, breakthrough_points, bottleneck_points FROM realm_levels WHERE realm = ? ORDER BY number`, realm.Name)
+		`SELECT number, name, breakthrough_points FROM realm_levels WHERE realm = ? ORDER BY number`, realm.Name)
 	if err != nil {
 		return fmt.Errorf("load realm levels: %w", err)
 	}
@@ -111,7 +111,7 @@ func (r *RealmRepository) loadLevels(ctx context.Context, realm *cultivation.Rea
 	realm.Levels = nil
 	for rows.Next() {
 		var l cultivation.Level
-		if err := rows.Scan(&l.Number, &l.Name, &l.BreakthroughPoints, &l.BottleneckPoints); err != nil {
+		if err := rows.Scan(&l.Number, &l.Name, &l.BreakthroughPoints); err != nil {
 			return fmt.Errorf("scan realm level: %w", err)
 		}
 		realm.Levels = append(realm.Levels, l)
@@ -121,10 +121,9 @@ func (r *RealmRepository) loadLevels(ctx context.Context, realm *cultivation.Rea
 
 // List returns all realms ordered by name.
 func (r *RealmRepository) List(ctx context.Context) ([]cultivation.Realm, error) {
-	const q = `
-SELECT name, power_multiplier, power_adder,
+	const q = `SELECT name, power_multiplier, power_adder,
        lifespan_multiplier, lifespan_adder,
-       bottleneck_points, max_levels, main_max_levels, tier
+       max_levels, main_max_levels, tier
 FROM realms ORDER BY tier, name`
 
 	rows, err := r.db.QueryContext(ctx, q)
@@ -162,7 +161,7 @@ func scanRealm(s scanner) (cultivation.Realm, error) {
 	err := s.Scan(
 		&realm.Name, &realm.PowerMultiplier, &realm.PowerAdder,
 		&realm.LifespanMultiplier, &realm.LifespanAdder,
-		&realm.BottleneckPoints, &realm.MaxLevels, &realm.MainCharacterMaxLevels, &realm.Tier,
+		&realm.MaxLevels, &realm.MainCharacterMaxLevels, &realm.Tier,
 	)
 	return realm, err
 }

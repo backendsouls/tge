@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"tge/internal/core/domain/character"
 	"tge/internal/core/port"
@@ -15,63 +17,88 @@ func NewIdleService(chars port.CharacterRepository) *IdleService {
 	return &IdleService{chars: chars}
 }
 
-// CommitOfflineGains commits any dynamically generated offline gains to the character's base energy pools,
-// and resets the StartTime to the current NovelTime.
+// CommitOfflineGains bakes finished idle slots into the base energy pools and removes them.
 func (s *IdleService) CommitOfflineGains(char *character.Character) {
-	if char.IdleState.StartTime == 0 {
-		char.IdleState.StartTime = char.NovelTime
-		return
-	}
-
-	// Calculate points generated up to now and commit them to the base pool
-	currentPools := char.CurrentEnergyPools(char.NovelTime)
 	if char.MechanicState.EnergyPools == nil {
 		char.MechanicState.EnergyPools = make(map[string]int)
 	}
 
-	for k, v := range currentPools {
-		char.MechanicState.EnergyPools[k] = v
-	}
+	var activeSlots []character.IdleSlot
+	for _, slot := range char.IdleState.Slots {
+		deltaHours := float64(char.NovelTime-slot.StartTime) / 3600.0
 
-	// Reset the start time for the next cycle
-	char.IdleState.StartTime = char.NovelTime
+		if slot.Duration > 0 {
+			if deltaHours >= slot.Duration {
+				if slot.Rate > 0 {
+					remainder := char.AdvanceNode(slot.System, slot.Power, slot.Duration*slot.Rate)
+					if remainder > 0 {
+						poolName := fmt.Sprintf("%s_%s", slot.System, slot.Power)
+						char.MechanicState.EnergyPools[poolName] += int(remainder)
+					}
+				}
+			} else {
+				if slot.Rate > 0 {
+					remainder := char.AdvanceNode(slot.System, slot.Power, deltaHours*slot.Rate)
+					if remainder > 0 {
+						poolName := fmt.Sprintf("%s_%s", slot.System, slot.Power)
+						char.MechanicState.EnergyPools[poolName] += int(remainder)
+					}
+				}
+				slot.Duration -= deltaHours
+				slot.StartTime = char.NovelTime
+				activeSlots = append(activeSlots, slot)
+			}
+		} else {
+			// Indefinite duration
+			if slot.Rate > 0 {
+				remainder := char.AdvanceNode(slot.System, slot.Power, deltaHours*slot.Rate)
+				if remainder > 0 {
+					poolName := fmt.Sprintf("%s_%s", slot.System, slot.Power)
+					char.MechanicState.EnergyPools[poolName] += int(remainder)
+				}
+			}
+			slot.StartTime = char.NovelTime
+			activeSlots = append(activeSlots, slot)
+		}
+	}
+	char.IdleState.Slots = activeSlots
 }
 
-// AssignActivity assigns an idle activity to a character, modifying their regeneration rates.
-func (s *IdleService) AssignActivity(ctx context.Context, charName string, activity string) (character.Character, error) {
+// AssignActivity assigns an idle activity to a character if a slot is available.
+func (s *IdleService) AssignActivity(ctx context.Context, charName string, systemName string, powerName string, duration float64) (character.Character, error) {
 	char, err := s.chars.FindByName(ctx, charName)
 	if err != nil {
 		return character.Character{}, err
 	}
 
-	// Make sure we commit gains before switching activities
 	s.CommitOfflineGains(&char)
 
-	char.IdleState.ActiveActivity = activity
-
-	// Reset rates based on activity
-	char.IdleState.Rates = character.IdleRates{}
-
-	switch activity {
-	case "rest":
-		char.IdleState.Rates.CultivationPointsPerHour = 10.0
-	case "secluded_cultivation":
-		char.IdleState.Rates.CultivationPointsPerHour = 100.0
-	case "training_skills":
-		char.IdleState.Rates.SkillPointsPerHour = 100.0
-	case "studying_ability":
-		char.IdleState.Rates.AbilityPointsPerHour = 100.0
-	case "working_profession":
-		char.IdleState.Rates.ProfessionPointsPerHour = 100.0
-	case "none", "":
-		// default rates
-	default:
-		// generic fallback or custom handling
-		char.IdleState.Rates.CultivationPointsPerHour = 5.0
+	if systemName == "none" || systemName == "" {
+		char.IdleState.Slots = []character.IdleSlot{}
+		if err := s.chars.Save(ctx, char); err != nil {
+			return character.Character{}, err
+		}
+		return char, nil
 	}
 
-	// StartTime is already reset by CommitOfflineGains, but we can ensure it is fresh
-	char.IdleState.StartTime = char.NovelTime
+	totalSlots := char.IdleState.TotalSlots
+	if totalSlots <= 0 {
+		totalSlots = 1
+	}
+
+	if len(char.IdleState.Slots) >= totalSlots {
+		return character.Character{}, errors.New("no available idle slots")
+	}
+
+	slot := character.IdleSlot{
+		StartTime: char.NovelTime,
+		Duration:  duration,
+		System:    systemName,
+		Power:     powerName,
+		Rate:      10.0, // Default 10 XP/hr
+	}
+
+	char.IdleState.Slots = append(char.IdleState.Slots, slot)
 
 	if err := s.chars.Save(ctx, char); err != nil {
 		return character.Character{}, err
