@@ -1,0 +1,45 @@
+{
+  "Name": "Cultivation",
+  "PowerSystemType": "Cultivation",
+  "Nodes": {
+    "body": {
+      "ID": "body",
+      "Name": "Body",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "soul": {
+      "ID": "soul",
+      "Name": "Soul",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    },
+    "spirit": {
+      "ID": "spirit",
+      "Name": "Spirit",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    }
+  }
+}

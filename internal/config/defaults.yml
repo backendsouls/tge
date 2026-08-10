@@ -10,7 +10,7 @@ world:
   multiverse: "Origin Multiverse"
   universe: "Origin Universe"
   realm: "Mortal Realm"
-  power_system: "Spirit"   # the default cultivation
+  power_system: "Cultivation"   # the default cultivation
 
 system_log:
   template: "[Ding! %s]"
@@ -24,14 +24,14 @@ character:
     lifespan: 80
     default_gender: "Male"
   stats:              # a new character's starting attributes
-    str: 5
-    agi: 5
-    int: 5
-    vit: 5
-    dex: 5
-    wis: 5
-    cha: 5
-    luk: 5
+    str: 0.65
+    agi: 0.65
+    int: 0.65
+    vit: 0.65
+    dex: 0.65
+    wis: 0.65
+    cha: 0.65
+    luk: 0.65
 
 rpg:
   grades:
@@ -45,26 +45,27 @@ rpg:
 # Starter catalog: seeded into the store on startup if absent.
 catalog:
   species:
-    - { name: "Human",    power: 1,  lifespan: 80,    default_gender: "Male" }
+    - { name: "Human",    power: 0.65,  lifespan: 80,    default_gender: "Male" }
     - { name: "Demon",    power: 3,  lifespan: 500,   default_gender: "Male" }
     - { name: "Spirit",   power: 2,  lifespan: 1000,  default_gender: "Female" }
     - { name: "Beastkin", power: 4,  lifespan: 150,   default_gender: "Male" }
     - { name: "Dragon",   power: 10, lifespan: 10000, default_gender: "Male" }
     - { name: "Fae",      power: 2,  lifespan: 3000,  default_gender: "Female" }
+    - { name: "Elf",      power: 1.5,  lifespan: 2000,  default_gender: "Female" }
 
-  # The default cultivation "Spirit" has 9 realms, each with 9 levels. Realms
-  # carry a bottleneck barrier; breakthrough/bottleneck per level are applied to
-  # the auto-generated levels via level_breakthrough_points/level_bottleneck_points.
+  # The default cultivation "Spirit" has 9 realms, each with 9 levels. 
+  # breakthrough points per level are applied to
+  # the auto-generated levels via level_breakthrough_points.
   realms:
-    - { name: "Spirit Gathering",   power_multiplier: 2,    power_adder: 10,      lifespan_multiplier: 1,   lifespan_adder: 80,     bottleneck_points: 50,    max_levels: 9, level_count: 9, level_breakthrough_points: 100,   level_bottleneck_points: 20 }
-    - { name: "Spirit Condensation", power_multiplier: 5,   power_adder: 100,     lifespan_multiplier: 2,   lifespan_adder: 200,    bottleneck_points: 150,   max_levels: 9, level_count: 9, level_breakthrough_points: 300,   level_bottleneck_points: 60 }
-    - { name: "Spirit Foundation",  power_multiplier: 10,   power_adder: 500,     lifespan_multiplier: 3,   lifespan_adder: 500,    bottleneck_points: 300,   max_levels: 9, level_count: 9, level_breakthrough_points: 600,   level_bottleneck_points: 120 }
-    - { name: "Spirit Core",        power_multiplier: 20,   power_adder: 2000,    lifespan_multiplier: 5,   lifespan_adder: 1000,   bottleneck_points: 600,   max_levels: 9, level_count: 9, level_breakthrough_points: 1200,  level_bottleneck_points: 240 }
-    - { name: "Nascent Spirit",     power_multiplier: 50,   power_adder: 10000,   lifespan_multiplier: 10,  lifespan_adder: 3000,   bottleneck_points: 1200,  max_levels: 9, level_count: 9, level_breakthrough_points: 2500,  level_bottleneck_points: 500 }
-    - { name: "Spirit Severing",    power_multiplier: 100,  power_adder: 50000,   lifespan_multiplier: 20,  lifespan_adder: 8000,   bottleneck_points: 2500,  max_levels: 9, level_count: 9, level_breakthrough_points: 5000,  level_bottleneck_points: 1000 }
-    - { name: "Spirit Ascension",   power_multiplier: 250,  power_adder: 200000,  lifespan_multiplier: 40,  lifespan_adder: 20000,  bottleneck_points: 5000,  max_levels: 9, level_count: 9, level_breakthrough_points: 10000, level_bottleneck_points: 2000 }
-    - { name: "Spirit Tribulation", power_multiplier: 600,  power_adder: 1000000, lifespan_multiplier: 80,  lifespan_adder: 50000,  bottleneck_points: 10000, max_levels: 9, level_count: 9, level_breakthrough_points: 20000, level_bottleneck_points: 4000 }
-    - { name: "Spirit Sovereign",   power_multiplier: 1500, power_adder: 5000000, lifespan_multiplier: 200, lifespan_adder: 150000, bottleneck_points: 25000, max_levels: 9, level_count: 9, level_breakthrough_points: 50000, level_bottleneck_points: 10000 }
+    - { name: "Spirit Gathering",   power_multiplier: 2,    power_adder: 10,      lifespan_multiplier: 1,   lifespan_adder: 80,     max_levels: 9, level_count: 9, level_breakthrough_points: 100 }
+    - { name: "Spirit Condensation", power_multiplier: 5,   power_adder: 100,     lifespan_multiplier: 2,   lifespan_adder: 200,    max_levels: 9, level_count: 9, level_breakthrough_points: 300 }
+    - { name: "Spirit Foundation",  power_multiplier: 10,   power_adder: 500,     lifespan_multiplier: 3,   lifespan_adder: 500,    max_levels: 9, level_count: 9, level_breakthrough_points: 600 }
+    - { name: "Spirit Core",        power_multiplier: 20,   power_adder: 2000,    lifespan_multiplier: 5,   lifespan_adder: 1000,   max_levels: 9, level_count: 9, level_breakthrough_points: 1200 }
+    - { name: "Nascent Spirit",     power_multiplier: 50,   power_adder: 10000,   lifespan_multiplier: 10,  lifespan_adder: 3000,   max_levels: 9, level_count: 9, level_breakthrough_points: 2500 }
+    - { name: "Spirit Severing",    power_multiplier: 100,  power_adder: 50000,   lifespan_multiplier: 20,  lifespan_adder: 8000,   max_levels: 9, level_count: 9, level_breakthrough_points: 5000 }
+    - { name: "Spirit Ascension",   power_multiplier: 250,  power_adder: 200000,  lifespan_multiplier: 40,  lifespan_adder: 20000,  max_levels: 9, level_count: 9, level_breakthrough_points: 10000 }
+    - { name: "Spirit Tribulation", power_multiplier: 600,  power_adder: 1000000, lifespan_multiplier: 80,  lifespan_adder: 50000,  max_levels: 9, level_count: 9, level_breakthrough_points: 20000 }
+    - { name: "Spirit Sovereign",   power_multiplier: 1500, power_adder: 5000000, lifespan_multiplier: 200, lifespan_adder: 150000, max_levels: 9, level_count: 9, level_breakthrough_points: 50000 }
 
   classes:
     - { name: "Warrior", description: "Front-line melee fighter" }
@@ -112,6 +113,20 @@ catalog:
         - { item: "Gold", quantity: 1 }
 
   power_systems:
+    - name: "Gamer (LowFantasy)"
+      kind: "Gamer"
+      powers:
+        - name: "System Interface"
+    - name: "Gamer (HighFantasy)"
+      kind: "Gamer"
+      powers:
+        - name: "System Interface"
+    - name: "Cultivation"
+      kind: "Cultivation"
+      powers:
+        - name: "Spirit"
+        - name: "Body"
+        - name: "Soul"
     - name: "SuperPower"
       kind: "SuperPower"
       powers:

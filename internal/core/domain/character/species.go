@@ -19,7 +19,7 @@ const HumanBaseName = "Human"
 // newly created main character's initial mortal status (base Power and Lifespan)
 // and defaults its members to Male.
 func HumanBase() Species {
-	return Species{Name: HumanBaseName, Power: 1, Lifespan: 80, DefaultGender: Male}
+	return Species{Name: HumanBaseName, Power: 0.65, Lifespan: 80, DefaultGender: Male}
 }
 
 // Species represents a biological classification with base status values and a

@@ -14,8 +14,6 @@ import (
 var (
 	// ErrInvalidName is returned when a realm name is empty or whitespace only.
 	ErrInvalidName = errors.New("realm: name must not be empty")
-	// ErrInvalidPoints is returned when a realm's bottleneck points are negative.
-	ErrInvalidPoints = errors.New("realm: points must not be negative")
 	// ErrInvalidMaxLevels is returned when a realm's maximum level count is negative.
 	ErrInvalidMaxLevels = errors.New("realm: max levels must not be negative")
 	// ErrLevelNumberExceedsMax is returned when a level number is above the realm's MaxLevels cap.
@@ -39,10 +37,6 @@ type Realm struct {
 
 	LifespanMultiplier float64 // a in the lifespan formula
 	LifespanAdder      float64 // b in the lifespan formula
-
-	// BottleneckPoints is the realm-wide difficulty barrier. Breakthrough is a
-	// per-level concept (see Level), not a realm one.
-	BottleneckPoints int
 
 	// MaxLevels is how many levels a normal character may reach in this realm
 	// (0 = unlimited). MainCharacterMaxLevels is the main character's higher cap;
@@ -78,8 +72,8 @@ func (r Realm) effectiveMaxLevels() int {
 // non-positive number, negative points, a duplicate number, or a number above
 // the realm's effective cap (the higher, main-character, cap when one is set).
 // Levels are kept sorted by Number.
-func (r *Realm) AddLevel(number int, name string, breakthroughPoints, bottleneckPoints int) error {
-	lvl, err := NewLevel(number, name, breakthroughPoints, bottleneckPoints)
+func (r *Realm) AddLevel(number int, name string, breakthroughPoints int) error {
+	lvl, err := NewLevel(number, name, breakthroughPoints)
 	if err != nil {
 		return err
 	}
@@ -104,7 +98,6 @@ type RealmConfig struct {
 	PowerAdder             float64
 	LifespanMultiplier     float64
 	LifespanAdder          float64
-	BottleneckPoints       int
 	MaxLevels              int
 	MainCharacterMaxLevels int
 }
@@ -115,9 +108,6 @@ func NewRealm(cfg RealmConfig) (Realm, error) {
 	name := strings.TrimSpace(cfg.Name)
 	if name == "" {
 		return Realm{}, ErrInvalidName
-	}
-	if cfg.BottleneckPoints < 0 {
-		return Realm{}, fmt.Errorf("%w: bottleneck points %d", ErrInvalidPoints, cfg.BottleneckPoints)
 	}
 	if cfg.MaxLevels < 0 {
 		return Realm{}, fmt.Errorf("%w: %d", ErrInvalidMaxLevels, cfg.MaxLevels)
@@ -133,7 +123,6 @@ func NewRealm(cfg RealmConfig) (Realm, error) {
 		PowerAdder:             cfg.PowerAdder,
 		LifespanMultiplier:     cfg.LifespanMultiplier,
 		LifespanAdder:          cfg.LifespanAdder,
-		BottleneckPoints:       cfg.BottleneckPoints,
 		MaxLevels:              cfg.MaxLevels,
 		MainCharacterMaxLevels: cfg.MainCharacterMaxLevels,
 	}, nil

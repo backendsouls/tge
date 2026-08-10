@@ -28,7 +28,6 @@ type AddLevelInput struct {
 	Number             int
 	Name               string
 	BreakthroughPoints int
-	BottleneckPoints   int
 }
 
 // RealmRepository is a driven port: it persists and retrieves realms. Adapters

@@ -3,6 +3,7 @@ package character
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"tge/internal/core/domain/power"
 	"tge/internal/core/domain/rpg"
@@ -61,24 +62,49 @@ type Mortal struct {
 
 // NodeProgress tracks a character's state at a specific PowerNode in a PowerSystem.
 type NodeProgress struct {
-	System    string
-	NodeID    string
-	Level     int
-	Progress  float64
-	BasePower float64
+	System    string  `json:"system"`
+	NodeID    string  `json:"node_id"`
+	Level     int     `json:"level"`
+	Progress  float64 `json:"progress"`
+	BasePower float64 `json:"base_power"`
 }
 
-type IdleRates struct {
-	SkillPointsPerHour       float64 `json:"skill_points_per_hour"`
-	CultivationPointsPerHour float64 `json:"cultivation_points_per_hour"`
-	AbilityPointsPerHour     float64 `json:"ability_points_per_hour"`
-	ProfessionPointsPerHour  float64 `json:"profession_points_per_hour"`
+// CalculateBreakthrough returns the points required to breakthrough to the next level
+func (n *NodeProgress) CalculateBreakthrough() float64 {
+	return 100.0 * float64(n.Level*n.Level)
+}
+
+// Advance tries to consume points to level up. Returns any remaining (unconsumed) points.
+func (n *NodeProgress) Advance(points float64) float64 {
+	for points > 0 {
+		reqBreakthrough := n.CalculateBreakthrough()
+		if n.Progress < reqBreakthrough {
+			add := math.Min(points, reqBreakthrough-n.Progress)
+			n.Progress += add
+			points -= add
+			if points == 0 {
+				return 0
+			}
+		}
+
+		// Gate filled -> level up!
+		n.Level++
+		n.Progress = 0
+	}
+	return points
+}
+
+type IdleSlot struct {
+	StartTime int64   `json:"start_time"`
+	Duration  float64 `json:"duration"` // in hours, <= 0 means indefinite
+	System    string  `json:"system"`
+	Power     string  `json:"power"`
+	Rate      float64 `json:"rate"`
 }
 
 type IdleState struct {
-	StartTime      int64     `json:"start_time"`
-	ActiveActivity string    `json:"active_activity"`
-	Rates          IdleRates `json:"rates"`
+	Slots      []IdleSlot `json:"slots"`
+	TotalSlots int        `json:"total_slots"`
 }
 
 type Character struct {
@@ -86,7 +112,8 @@ type Character struct {
 	Type          CharacterType
 	Gender        Gender
 	Species       []Species
-	PowerValue    string // The string representation of Total Power
+	Systems       []string // Names of power systems this character belongs to
+	PowerValue    string   // The string representation of Total Power
 	MechanicState power.MechanicState
 	UnlockedNodes []NodeProgress
 	Mortal        Mortal
@@ -104,20 +131,33 @@ func (c *Character) CalculateTotalPower() float64 {
 	total := c.MechanicState.BasePower
 
 	for _, node := range c.UnlockedNodes {
-		total += node.BasePower
+		total += node.BasePower * float64(node.Level)
 	}
 
-	// Apply species multiplier
-	if len(c.Species) > 0 {
-		total *= c.Species[0].Power
+	for _, sp := range c.Species {
+		total *= sp.Power
 	}
 
 	if total < 1.0 {
 		total = 1.0
 	}
 
-	c.PowerValue = fmt.Sprintf("%g", total)
+	c.PowerValue = fmt.Sprintf("%.0f", total)
 	return total
+}
+
+// AdvanceNode applies points to a specific NodeProgress. It returns any leftover points.
+func (c *Character) AdvanceNode(system, nodeID string, points float64) float64 {
+	for i, np := range c.UnlockedNodes {
+		if np.System == system && np.NodeID == nodeID {
+			remainder := np.Advance(points)
+			c.UnlockedNodes[i] = np
+			c.CalculateTotalPower()
+			return remainder
+		}
+	}
+	// Node not unlocked, all points remain
+	return points
 }
 
 // CurrentEnergyPools calculates the current energy pools including dynamically generated idle points.
@@ -129,20 +169,16 @@ func (c *Character) CurrentEnergyPools(currentNovelTime int64) map[string]int {
 		}
 	}
 
-	if c.IdleState.StartTime >= 0 && currentNovelTime > c.IdleState.StartTime {
-		deltaHours := float64(currentNovelTime-c.IdleState.StartTime) / 3600.0
-
-		if c.IdleState.Rates.SkillPointsPerHour > 0 {
-			pools["SkillPoints"] += int(deltaHours * c.IdleState.Rates.SkillPointsPerHour)
-		}
-		if c.IdleState.Rates.CultivationPointsPerHour > 0 {
-			pools["CultivationPoints"] += int(deltaHours * c.IdleState.Rates.CultivationPointsPerHour)
-		}
-		if c.IdleState.Rates.AbilityPointsPerHour > 0 {
-			pools["AbilityPoints"] += int(deltaHours * c.IdleState.Rates.AbilityPointsPerHour)
-		}
-		if c.IdleState.Rates.ProfessionPointsPerHour > 0 {
-			pools["ProfessionPoints"] += int(deltaHours * c.IdleState.Rates.ProfessionPointsPerHour)
+	for _, slot := range c.IdleState.Slots {
+		if slot.StartTime >= 0 && currentNovelTime > slot.StartTime {
+			deltaHours := float64(currentNovelTime-slot.StartTime) / 3600.0
+			if slot.Duration > 0 && deltaHours > slot.Duration {
+				deltaHours = slot.Duration
+			}
+			if slot.Rate > 0 {
+				poolName := fmt.Sprintf("%s_%s", slot.System, slot.Power)
+				pools[poolName] += int(deltaHours * slot.Rate)
+			}
 		}
 	}
 
@@ -154,6 +190,7 @@ type CharacterConfig struct {
 	Type       CharacterType
 	Gender     Gender
 	Species    Species
+	Systems    []string
 	Class      rpg.Class
 	Profession rpg.Profession
 	Age        int
@@ -183,19 +220,24 @@ func NewMortalCharacter(cfg CharacterConfig) (Character, error) {
 		stats = rpg.BaseStats()
 	}
 
-	state, _ := power.NewMechanicState(0, 1.0)
+	mState, _ := power.NewMechanicState(0, 1.0)
 
 	char := Character{
 		Name:          name,
 		Type:          cfg.Type,
 		Gender:        cfg.Gender,
 		Species:       []Species{cfg.Species},
-		MechanicState: state,
+		Systems:       cfg.Systems,
+		MechanicState: mState,
 		UnlockedNodes: []NodeProgress{},
-		Mortal:        Mortal{Age: age, Lifespan: cfg.Species.Lifespan},
-		Class:         cfg.Class,
-		Profession:    cfg.Profession,
-		Stats:         stats,
+		IdleState:     IdleState{TotalSlots: 1},
+		Mortal: Mortal{
+			Age:      age,
+			Lifespan: cfg.Species.Lifespan,
+		},
+		Class:      cfg.Class,
+		Profession: cfg.Profession,
+		Stats:      stats,
 	}
 	char.CalculateTotalPower()
 

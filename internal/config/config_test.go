@@ -20,8 +20,8 @@ func TestLoad_Embedded(t *testing.T) {
 	if d.Character.Species.Name != "Human" || d.Character.Species.Lifespan != 80 {
 		t.Errorf("Human base = %+v", d.Character.Species)
 	}
-	if d.Character.Stats.STR != 5 {
-		t.Errorf("base STR = %d, want 5", d.Character.Stats.STR)
+	if d.Character.Stats.STR != 0.65 {
+		t.Errorf("base STR = %v, want 0.65", d.Character.Stats.STR)
 	}
 	if len(d.Catalog.Realms) == 0 || len(d.Catalog.Classes) == 0 {
 		t.Fatalf("catalog looks empty: %+v", d.Catalog)

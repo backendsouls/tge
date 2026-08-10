@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS realms (
 	power_adder         REAL    NOT NULL,
 	lifespan_multiplier REAL    NOT NULL,
 	lifespan_adder      REAL    NOT NULL,
-	bottleneck_points   INTEGER NOT NULL,
 	max_levels          INTEGER NOT NULL DEFAULT 0,
 	main_max_levels     INTEGER NOT NULL DEFAULT 0
 );
@@ -18,7 +17,6 @@ CREATE TABLE IF NOT EXISTS realm_levels (
 	number              INTEGER NOT NULL,
 	name                TEXT    NOT NULL,
 	breakthrough_points INTEGER NOT NULL DEFAULT 0,
-	bottleneck_points   INTEGER NOT NULL DEFAULT 0,
 	PRIMARY KEY (realm, number)
 );
 

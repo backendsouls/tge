@@ -29,14 +29,14 @@ var embedded []byte
 
 // Stats mirrors rpg.Stats for (de)serialization.
 type Stats struct {
-	STR int `yaml:"str"`
-	AGI int `yaml:"agi"`
-	INT int `yaml:"int"`
-	VIT int `yaml:"vit"`
-	DEX int `yaml:"dex"`
-	WIS int `yaml:"wis"`
-	CHA int `yaml:"cha"`
-	LUK int `yaml:"luk"`
+	STR float64 `yaml:"str"`
+	AGI float64 `yaml:"agi"`
+	INT float64 `yaml:"int"`
+	VIT float64 `yaml:"vit"`
+	DEX float64 `yaml:"dex"`
+	WIS float64 `yaml:"wis"`
+	CHA float64 `yaml:"cha"`
+	LUK float64 `yaml:"luk"`
 }
 
 // Species is a base biological template.
@@ -89,7 +89,6 @@ type Level struct {
 	Number             int    `yaml:"number"`
 	Name               string `yaml:"name"`
 	BreakthroughPoints int    `yaml:"breakthrough_points"`
-	BottleneckPoints   int    `yaml:"bottleneck_points"`
 }
 
 // Realm is a cultivation stage with its formulas, caps and levels.
@@ -99,15 +98,13 @@ type Realm struct {
 	PowerAdder             float64 `yaml:"power_adder"`
 	LifespanMultiplier     float64 `yaml:"lifespan_multiplier"`
 	LifespanAdder          float64 `yaml:"lifespan_adder"`
-	BottleneckPoints       int     `yaml:"bottleneck_points"` // realm-wide bottleneck
 	MaxLevels              int     `yaml:"max_levels"`
 	MainCharacterMaxLevels int     `yaml:"main_character_max_levels"`
 	// LevelCount auto-generates this many ordinally-named levels ("First Level"
 	// ..) when Levels is not given explicitly. The generated levels take their
-	// points from LevelBreakthroughPoints and LevelBottleneckPoints.
+	// points from LevelBreakthroughPoints.
 	LevelCount              int     `yaml:"level_count"`
 	LevelBreakthroughPoints int     `yaml:"level_breakthrough_points"`
-	LevelBottleneckPoints   int     `yaml:"level_bottleneck_points"`
 	Levels                  []Level `yaml:"levels"`
 }
 

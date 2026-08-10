@@ -1,0 +1,19 @@
+{
+  "Name": "Gamer (HighFantasy)",
+  "PowerSystemType": "Gamer",
+  "Nodes": {
+    "system_interface": {
+      "ID": "system_interface",
+      "Name": "System Interface",
+      "Category": "General",
+      "Tags": [],
+      "Parents": [],
+      "Siblings": [],
+      "MutuallyExclusive": [],
+      "BasePower": 0,
+      "StatVector": {},
+      "MaterialReq": {},
+      "Drawbacks": []
+    }
+  }
+}

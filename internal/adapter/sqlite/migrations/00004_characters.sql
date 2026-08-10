@@ -42,8 +42,7 @@ CREATE TABLE IF NOT EXISTS character_items (
 );
 
 -- A character's cultivation state: one row per (system, path) node, anchored to a
--- realm + level, with the two-phase breakthrough/bottleneck progress and the
--- level's thresholds captured for a self-contained status view.
+-- realm + level, with the level's thresholds captured for a self-contained status view.
 CREATE TABLE IF NOT EXISTS character_cultivations (
 	character           TEXT    NOT NULL,
 	system              TEXT    NOT NULL,
@@ -52,9 +51,7 @@ CREATE TABLE IF NOT EXISTS character_cultivations (
 	level_number        INTEGER NOT NULL,
 	level_name          TEXT    NOT NULL,
 	breakthrough_points INTEGER NOT NULL DEFAULT 0,
-	bottleneck_points   INTEGER NOT NULL DEFAULT 0,
 	points              INTEGER NOT NULL DEFAULT 0,
-	bottleneck          INTEGER NOT NULL DEFAULT 0,
 	progress            REAL    NOT NULL DEFAULT 0,
 	PRIMARY KEY (character, system, path)
 );

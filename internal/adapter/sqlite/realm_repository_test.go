@@ -32,7 +32,6 @@ func sampleRealm(t *testing.T, name string) cultivation.Realm {
 		PowerAdder:         10,
 		LifespanMultiplier: 5,
 		LifespanAdder:      100,
-		BottleneckPoints:   250,
 	})
 	if err != nil {
 		t.Fatalf("build realm: %v", err)

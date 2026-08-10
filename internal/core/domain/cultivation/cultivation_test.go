@@ -26,7 +26,7 @@ func TestNewCultivationState(t *testing.T) {
 	level := Level{Number: 1, Name: "First Level", BreakthroughPoints: 100}
 
 	t.Run("creates a state at a realm and level", func(t *testing.T) {
-		c, err := NewCultivationState(realm, level, 10, 0, 3)
+		c, err := NewCultivationState(realm, level, 10, 3)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -48,7 +48,7 @@ func TestNewCultivationState(t *testing.T) {
 	})
 
 	t.Run("rejects negative progress", func(t *testing.T) {
-		_, err := NewCultivationState(realm, level, 0, 0, -1)
+		_, err := NewCultivationState(realm, level, 0, -1)
 		if !errors.Is(err, ErrInvalidProgress) {
 			t.Fatalf("err = %v, want %v", err, ErrInvalidProgress)
 		}
@@ -57,37 +57,30 @@ func TestNewCultivationState(t *testing.T) {
 
 func TestCultivationStateAdvanceWithin(t *testing.T) {
 	realm := mustRealm(t)
-	if err := realm.AddLevel(1, "First Level", 100, 20); err != nil {
+	if err := realm.AddLevel(1, "First Level", 100); err != nil {
 		t.Fatal(err)
 	}
-	if err := realm.AddLevel(2, "Second Level", 300, 60); err != nil {
+	if err := realm.AddLevel(2, "Second Level", 300); err != nil {
 		t.Fatal(err)
 	}
 	start := CultivationState{Realm: realm, Level: realm.Levels[0]}
 
-	t.Run("fills the breakthrough gate before the bottleneck", func(t *testing.T) {
+	t.Run("fills the breakthrough gate", func(t *testing.T) {
 		c, left := start.AdvanceWithin(60)
-		if left != 0 || c.Points != 60 || c.Bottleneck != 0 {
-			t.Fatalf("points=%d bottleneck=%d left=%d", c.Points, c.Bottleneck, left)
+		if left != 0 || c.Points != 60 {
+			t.Fatalf("points=%d left=%d", c.Points, left)
 		}
 	})
 
-	t.Run("overflow spills into the bottleneck once breakthrough is full", func(t *testing.T) {
-		c, left := start.AdvanceWithin(110) // 100 breakthrough + 10 bottleneck
-		if left != 0 || c.Points != 100 || c.Bottleneck != 10 || c.Level.Number != 1 {
-			t.Fatalf("level=%d points=%d bottleneck=%d left=%d", c.Level.Number, c.Points, c.Bottleneck, left)
-		}
-	})
-
-	t.Run("advances to the next level when both gates fill", func(t *testing.T) {
-		c, left := start.AdvanceWithin(150) // fills L1 (100+20), 30 into L2 breakthrough
-		if left != 0 || c.Level.Number != 2 || c.Points != 30 || c.Bottleneck != 0 {
-			t.Fatalf("level=%d points=%d bottleneck=%d left=%d", c.Level.Number, c.Points, c.Bottleneck, left)
+	t.Run("advances to the next level when gate fills", func(t *testing.T) {
+		c, left := start.AdvanceWithin(150) // fills L1 (100), 50 into L2 breakthrough
+		if left != 0 || c.Level.Number != 2 || c.Points != 50 {
+			t.Fatalf("level=%d points=%d left=%d", c.Level.Number, c.Points, left)
 		}
 	})
 
 	t.Run("returns leftover points at the realm ceiling", func(t *testing.T) {
-		c, left := start.AdvanceWithin(120 + 360 + 25) // fill L1 and L2 fully, 25 beyond
+		c, left := start.AdvanceWithin(100 + 300 + 25) // fill L1 and L2 fully, 25 beyond
 		if c.Level.Number != 2 || !c.Ready() || left != 25 {
 			t.Fatalf("level=%d ready=%v left=%d", c.Level.Number, c.Ready(), left)
 		}
@@ -95,8 +88,7 @@ func TestCultivationStateAdvanceWithin(t *testing.T) {
 }
 
 func TestCultivationStateDerivedStats(t *testing.T) {
-	// Power/Lifespan are the realm's ax+b formulas evaluated at Progress.
-	c, err := NewCultivationState(mustRealm(t), Level{Number: 1, Name: "First Level"}, 0, 0, 3)
+	c, err := NewCultivationState(mustRealm(t), Level{Number: 1, Name: "First Level"}, 0, 3)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

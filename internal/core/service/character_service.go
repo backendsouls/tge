@@ -115,6 +115,7 @@ func (s *CharacterService) CreateCharacter(ctx context.Context, in port.CreateCh
 		Type:       ctype,
 		Gender:     character.Gender(in.Gender),
 		Species:    sp,
+		Systems:    in.Systems,
 		Class:      class,
 		Profession: profession,
 		Age:        s.defaults.Age,
@@ -232,6 +233,33 @@ func (s *CharacterService) TrainNode(ctx context.Context, in port.TrainNodeInput
 	return c, nil
 }
 
+func (s *CharacterService) AddPower(ctx context.Context, in port.AddPowerInput) (character.Character, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	c, err := s.chars.FindByName(ctx, in.Character)
+	if err != nil {
+		return character.Character{}, err
+	}
+
+	_, err = s.systems.FindByName(ctx, in.System)
+	if err != nil {
+		return character.Character{}, err
+	}
+
+	for _, sys := range c.Systems {
+		if sys == in.System {
+			return c, nil // Already has it
+		}
+	}
+
+	c.Systems = append(c.Systems, in.System)
+	if err := s.chars.Save(ctx, c); err != nil {
+		return character.Character{}, err
+	}
+	return c, nil
+}
+
 func (s *CharacterService) MainCharacter(ctx context.Context) (character.Character, error) {
 	mcs, err := s.chars.MainCharacters(ctx)
 	if err != nil {
@@ -257,10 +285,10 @@ func (s *CharacterService) CleanCharacters(ctx context.Context) error {
 	return s.chars.Clean(ctx)
 }
 
-func (s *CharacterService) AssignIdleActivity(ctx context.Context, charName string, activity string) (character.Character, error) {
+func (s *CharacterService) AssignIdleActivity(ctx context.Context, charName string, systemName string, powerName string, duration float64) (character.Character, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.idle.AssignActivity(ctx, charName, activity)
+	return s.idle.AssignActivity(ctx, charName, systemName, powerName, duration)
 }
 
 func (s *CharacterService) PassTime(ctx context.Context, charName string, seconds int64) (character.Character, error) {
@@ -272,10 +300,10 @@ func (s *CharacterService) PassTime(ctx context.Context, charName string, second
 		return character.Character{}, err
 	}
 
-	// Make sure we commit gains up to the previous NovelTime before advancing time
-	s.idle.CommitOfflineGains(&c)
-
 	c.NovelTime += seconds
+
+	// Make sure we commit gains up to the new NovelTime, which cleans up finished slots
+	s.idle.CommitOfflineGains(&c)
 
 	if err := s.chars.Save(ctx, c); err != nil {
 		return character.Character{}, err

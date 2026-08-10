@@ -12,20 +12,20 @@ var ErrNegativeStat = errors.New("stats: attribute must not be negative")
 
 // Stats holds a character's eight core attributes.
 type Stats struct {
-	STR int // Strength
-	AGI int // Agility
-	INT int // Intelligence
-	VIT int // Vitality
-	DEX int // Dexterity
-	WIS int // Wisdom
-	CHA int // Charisma
-	LUK int // Luck
+	STR float64 // Strength
+	AGI float64 // Agility
+	INT float64 // Intelligence
+	VIT float64 // Vitality
+	DEX float64 // Dexterity
+	WIS float64 // Wisdom
+	CHA float64 // Charisma
+	LUK float64 // Luck
 }
 
 // NewStats validates and builds a stat block; every attribute must be >= 0.
-func NewStats(str, agi, intel, vit, dex, wis, cha, luk int) (Stats, error) {
+func NewStats(str, agi, intel, vit, dex, wis, cha, luk float64) (Stats, error) {
 	s := Stats{STR: str, AGI: agi, INT: intel, VIT: vit, DEX: dex, WIS: wis, CHA: cha, LUK: luk}
-	for _, v := range []int{str, agi, intel, vit, dex, wis, cha, luk} {
+	for _, v := range []float64{str, agi, intel, vit, dex, wis, cha, luk} {
 		if v < 0 {
 			return Stats{}, ErrNegativeStat
 		}
@@ -35,7 +35,7 @@ func NewStats(str, agi, intel, vit, dex, wis, cha, luk int) (Stats, error) {
 
 // BaseStats returns the default starting attributes for a new character.
 func BaseStats() Stats {
-	return Stats{STR: 5, AGI: 5, INT: 5, VIT: 5, DEX: 5, WIS: 5, CHA: 5, LUK: 5}
+	return Stats{STR: 0.65, AGI: 0.65, INT: 0.65, VIT: 0.65, DEX: 0.65, WIS: 0.65, CHA: 0.65, LUK: 0.65}
 }
 
 // Add returns the element-wise sum of two stat blocks (e.g. base + equipment
