@@ -11,7 +11,7 @@ func TestCharacter_CalculateTotalPower(t *testing.T) {
 		Name:    "Shirou",
 		Type:    character.MainCharacter,
 		Gender:  character.Male,
-		Species: character.Species{Name: "Human", Power: 1.0},
+		Species: character.Species{Name: "Human", Power: 0.65},
 	}
 	char, err := character.NewMortalCharacter(cfg)
 	if err != nil {
@@ -32,8 +32,8 @@ func TestCharacter_CalculateTotalPower(t *testing.T) {
 
 	// Expected power: MechanicState.BasePower (100) + UnlockedNodes BasePower (50) = 150
 	totalPower := char.CalculateTotalPower()
-	if totalPower != 150.0 {
-		t.Errorf("expected total power to be 150.0, got %f", totalPower)
+	if totalPower != 97.5 {
+		t.Errorf("expected total power to be 97.5, got %f", totalPower)
 	}
 }
 

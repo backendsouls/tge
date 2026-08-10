@@ -11,19 +11,19 @@ func TestNewSpecies(t *testing.T) {
 		t.Errorf("expected ErrInvalidSpeciesName, got %v", err)
 	}
 
-	if _, err := character.NewSpecies("Human", 1, 80, "Neither"); err == nil {
+	if _, err := character.NewSpecies("Human", 0.65, 80, "Neither"); err == nil {
 		t.Error("expected an error for an invalid default gender")
 	}
 
-	s, err := character.NewSpecies(" Human ", 1, 80, character.Male)
+	s, err := character.NewSpecies(" Human ", 0.65, 80, character.Male)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if s.Name != "Human" {
 		t.Errorf("expected name Human, got %q", s.Name)
 	}
-	if s.Power != 1 {
-		t.Errorf("expected power 1, got %v", s.Power)
+	if s.Power != 0.65 {
+		t.Errorf("expected power 0.65, got %v", s.Power)
 	}
 	if s.Lifespan != 80 {
 		t.Errorf("expected lifespan 80, got %v", s.Lifespan)

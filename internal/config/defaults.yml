@@ -45,7 +45,7 @@ rpg:
 # Starter catalog: seeded into the store on startup if absent.
 catalog:
   species:
-    - { name: "Human",    power: 1,  lifespan: 80,    default_gender: "Male" }
+    - { name: "Human",    power: 0.65,  lifespan: 80,    default_gender: "Male" }
     - { name: "Demon",    power: 3,  lifespan: 500,   default_gender: "Male" }
     - { name: "Spirit",   power: 2,  lifespan: 1000,  default_gender: "Female" }
     - { name: "Beastkin", power: 4,  lifespan: 150,   default_gender: "Male" }
