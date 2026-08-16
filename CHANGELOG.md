@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/backendsouls/tge/compare/v1.0.0...v1.1.0) (2026-08-16)
+
+
+### Features
+
+* docs sync with code ([#5](https://github.com/backendsouls/tge/issues/5)) ([cd9e52b](https://github.com/backendsouls/tge/commit/cd9e52bfc81f49fcd527fe90f359ce34144e0433))
+
 ## 1.0.0 (2026-08-09)
 
 
