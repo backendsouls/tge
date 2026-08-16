@@ -33,5 +33,15 @@ on). A `Universe` is where the game mechanics live: it contains one or more
 Every location at every tier — Reality, Omniverse, Multiverse, Universe, and each
 in-universe Realm — **owns exactly one `Timeline`**, an ordered, uniquely-numbered
 sequence of `Event`s, auto-provisioned with a derived default name when the location is
-created. Creating a name-only main character provisions this whole chain once,
-idempotently; that flow is in [create-character-flow.md](create-character-flow.md).
+created. A universe may hold zero realms, exactly one (a "bubble"), or many.
+
+A Timeline holds **authored narrative events**. It is a different clock from
+`Character.NovelTime`, the per-character simulation clock that idle progression runs
+against — see [progression-flow.md](progression-flow.md).
+
+Creating a name-only main character provisions this whole chain once, idempotently; that
+flow is in [create-character-flow.md](create-character-flow.md). Note that adding a realm
+(`Location`) to a universe has a domain method, port and service — but **nothing calls the
+service method**: there is no CLI command, and the default-world provisioner writes its one
+realm through the repository's `SaveRealms` directly. `UniverseService.AddRealms` (and the
+realm-timeline provisioning inside it) is unreachable today.

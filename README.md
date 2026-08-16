@@ -16,7 +16,7 @@ of the CLI and the storage engine.
   profession, stats and inventory.
 - **Progression** — power systems modeled as trees of powers; cultivation realms
   with linear `ax + b` power/lifespan formulas, subdivided into ordered levels with
-  breakthrough/bottleneck thresholds; per-character **cultivation state**.
+  breakthrough thresholds; per-character **cultivation state**.
 - **Cosmology** — a containment hierarchy of Reality → Omniverse → Multiverse →
   Universe → Realm, each owning a timeline of ordered events.
 - **RPG toolkit** — stats, items, abilities, skills, effects, equipment, classes,

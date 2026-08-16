@@ -6,11 +6,14 @@ This document outlines the design for the new `SuperPower` power system, which c
 
 The **SuperPower** system models abilities commonly found in comic books and superhero media. Unlike traditional Cultivation paths that require slow gathering of Qi or spiritual energy, superpowers are often innate, awakened through trauma, or gained through scientific accidents/genetic mutation. 
 
-This system will function as a distinct `PowerSystem` within the domain. Given its nature, it might be classified under a new `SystemKind` (e.g., `Superhuman` or `Mutation`) or adapted into the existing progression frameworks.
+This system functions as a distinct `PowerSystem` within the domain, under its own
+`powersystem.PowerSystemType` value: **`SuperPower`** (alongside `Cultivation`, `Magic`,
+`Reiatsu` and `Gamer`).
 
 ## Super Power Categories (Kinds)
 
-Powers are divided into five main branches (which can be modeled as child sub-powers in the `PowerSystem` tree):
+Powers are divided into five main branches, modelled as root `PowerNode`s in the system's
+DAG with the specific powers as children (`EdgeParent`):
 
 1. **Physical Enhancements**
    - *Super Strength:* Immense physical power.
@@ -45,6 +48,10 @@ Powers are divided into five main branches (which can be modeled as child sub-po
 
 Instead of standard Cultivation "Realms", the progression of a specific superpower is measured in **Tiers** or **Levels**. As a character progresses, their `PowerState` (e.g., `SuperPowerState`) advances through these ranks, unlocking higher potential and lifespan modifiers.
 
+The multipliers below are the ones `superpower.SuperPowerState.Power()` returns for tiers
+0–5 (`NewSuperPowerState` rejects anything outside that range). The lifespan modifiers are
+design intent only — `SuperPowerState` has no lifespan method.
+
 0. **Level 0: Base / Dormant**
    - *Description:* The baseline level, often before awakening or when the power is completely suppressed.
    - *Power Multiplier:* 1.0x
@@ -73,9 +80,26 @@ Instead of standard Cultivation "Realms", the progression of a specific superpow
    - *Power Multiplier:* 100x+
    - *Lifespan Modifier:* Immortality or vast increase (e.g., +10,000 years)
 
-## Integration Plan
+## Integration status
 
-To implement the `SuperPower` system in the `tge` CLI:
-1. Define a new structure or use existing `Cultivation` to map the levels (Level 1 to 5).
-2. The roots of the `PowerSystem` will be the Categories (Physical, Mental, etc.), with specific powers as child nodes, or individual powers as the roots themselves.
-3. Update the database seed or `defaults.yml` to include the SuperPower system and its associated "Realms" (Levels).
+**Shipped.**
+
+1. `powersystem.SuperPower` exists as a `PowerSystemType`.
+2. `superpower.SuperPowerState{Tier}` implements `power.PowerState`, with the tier→multiplier
+   table above and bounds checking on construction.
+3. `defaults.yml` seeds a `SuperPower` system whose roots are the five categories, each with
+   its specific powers attached as children via `EdgeParent`.
+
+**Not yet wired.**
+
+- Nothing constructs a `SuperPowerState`. A character's shipped progression runs through
+  `character.NodeProgress` (a per-node `Level` + `Progress` against a `100 × Level²` gate),
+  which is system-agnostic and ignores the tier table entirely — so a superpower node
+  currently progresses on the same curve as a cultivation node. Mapping tier ↔ node level,
+  or routing `SuperPower` systems through `SuperPowerState`, is the open work.
+- Lifespan modifiers have no representation anywhere.
+- The categories seed as plain nodes with `BasePower` 0 and category `"General"`; per-power
+  `BasePower`, `StatVector`, `MaterialReq` and `Drawbacks` are unset.
+
+See [decisions.md](decisions.md) §5 for why the `PowerState` implementations are kept
+staged rather than deleted or wired in.
