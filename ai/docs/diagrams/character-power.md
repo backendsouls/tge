@@ -1,44 +1,73 @@
-# A Character's Power: Definition vs. Instance
+# A Character's Power: Shared Definition vs. Held Progress
 
 ```mermaid
 %%{init: {"theme":"dark","themeVariables":{"lineColor":"#c8d3f5"},"themeCSS":".edgePath path,.flowchart-link{stroke-width:2px} .messageLine0,.messageLine1{stroke-width:2px} .relation{stroke-width:2px} .actor{stroke-width:2px} .node rect,.node circle,.node polygon,.node path{stroke-width:2px} .cluster rect{stroke-width:2px}"}}%%
 flowchart LR
-    subgraph CH["Character"]
+    subgraph CH["Character (data/characters/lin_feng.json)"]
         direction TB
-        DEF["PowerSystems []PowerSystem<br/>(DEFINITIONS — what it can grow in)"]
-        INST["Power []PowerSystem<br/>(INSTANCES — what it has grown)"]
+        SYS["Systems []string<br/>['Cultivation']  — membership by NAME"]
+        MS["MechanicState<br/>Tier · BasePower · IsAwakened<br/>Alignment · EnergyPools · SpellSlots"]
+        UN["UnlockedNodes []NodeProgress<br/>{System, NodeID, Level, Progress, BasePower}"]
+        PV["PowerValue string<br/>(derived, recomputed on every mutation)"]
     end
 
-    subgraph DEFTREE["Definition tree (shared, authored once)"]
-        D1["PowerSystem{Kind: Cultivation}"]
-        D1 --> DP1["Power 'Spirit' (State = nil)"]
-        D1 --> DP2["Power 'Body' (State = nil)"]
+    subgraph DEF["Shared definition — illustrative graph, not the shipped catalog"]
+        direction TB
+        PS["PowerSystem{Name, PowerSystemType: Cultivation}<br/>Nodes map[string]*PowerNode"]
+        N1["'spirit'<br/>BasePower, StatVector, Tags"]
+        N2["'body'"]
+        N3["'soul'"]
+        N4["'golden_core'<br/>Parents: [spirit, body]"]
+        N5["'demonic_core'<br/>MutuallyExclusive: [golden_core]"]
+        PS --> N1
+        PS --> N2
+        PS --> N3
+        N1 --> N4
+        N2 --> N4
+        N4 -.->|mutually exclusive| N5
     end
 
-    subgraph INSTTREE["Instance tree (this character's progress)"]
-        I1["PowerSystem{Kind: Cultivation}"]
-        I1 --> IP1["Power 'Spirit'<br/>State = CultivationState{Realm, Level, Points}"]
-    end
+    SYS -->|resolved by name at use time| PS
+    UN -->|NodeID| N1
+    UN -->|NodeID| N4
+    MS --> PV
+    UN --> PV
 
-    DEF --> DEFTREE
-    INST --> INSTTREE
-
+    classDef held fill:#16351f,stroke:#7ad08a,color:#e5e7eb,stroke-width:2px
     classDef def fill:#1f2a44,stroke:#7aa2f7,color:#e5e7eb,stroke-width:2px
-    classDef inst fill:#16351f,stroke:#7ad08a,color:#e5e7eb,stroke-width:2px
-    class D1,DP1,DP2 def
-    class I1,IP1 inst
+    class SYS,MS,UN,PV held
+    class PS,N1,N2,N3,N4,N5 def
 ```
 
-A `Character` carries **two** `[]progression.PowerSystem` fields that use the same type
-for two different jobs. `PowerSystems` are the **definitions** — the complete power
-trees the character has access to, authored once and shared; their `Power` nodes carry
-no state (`State == nil`). `Power` is the character's **instances** — its own progressed
-copies, where each node it has advanced carries a `PowerState`. Keeping both as
-`PowerSystem` (rather than a cultivation-specific type) is deliberate: `SystemKind`
-distinguishes families (`Cultivation`, `Magic`), and the node-level `PowerState`
-interface lets each family bring its own progress shape. Today the only implementation
-is `CultivationState` (Realm + Level + accumulated Points + Progress), so a cultivation
-instance node reads "at *this* Realm and Level"; a future Magic system would attach a
-different `PowerState` to the same structure. `PowerValue` (a rendered string) is a
-separate, third thing — a summary number, not the structured state. See
-[../decisions.md](../decisions.md) §1–§2 for the rationale.
+> The graph above is drawn to show what the DAG *can* express. The seeded `Cultivation`
+> system is actually flat — three parentless roots (`spirit`, `body`, `soul`) and no edges
+> at all; `golden_core`/`demonic_core` are invented. The only seeded system with real parent
+> edges is `SuperPower`, whose five category roots each have children. Nothing in the
+> shipped catalog uses `EdgeSibling` or `EdgeMutuallyExclusive`.
+
+A `PowerSystem` is a **shared definition** and holds no per-character state whatsoever.
+It is a DAG of `PowerNode`s in a flat `map[string]*PowerNode` keyed by a slug ID derived
+from the node name, with shape carried by edges *on the nodes*: `Parents` (multi-parent —
+`golden_core` needs both `spirit` and `body`), `Siblings`, and `MutuallyExclusive` (written
+symmetrically onto both nodes). A parent edge that would close a cycle is rejected with
+`ErrCyclicDependency`, which is what keeps it a DAG rather than a general graph.
+
+The **character** holds three separate things pointing at that definition:
+
+- `Systems []string` — membership, by name. The definition is loaded from the repository
+  when it's actually needed.
+- `MechanicState` — everything true about the character *across* systems: tier, awakening,
+  alignment, energy pools, spell slots, vows, permanent traits. Stored once, not
+  duplicated per system.
+- `UnlockedNodes []NodeProgress` — a short list of `{System, NodeID, Level, Progress,
+  BasePower}` records for the individual nodes it has actually unlocked.
+
+`PowerValue` is not stored state but a rendered derivation, recomputed by
+`CalculateTotalPower()` on every mutation:
+`(MechanicState.BasePower + Σ node.BasePower × node.Level) × Π species.Power`, floored at
+`1.0`. Note the product over **all** species — that's what makes hybrids compound.
+
+This replaced an earlier design where a character carried two `[]PowerSystem` fields —
+tree *definitions* and progressed *instance* copies with state hung on each node. That
+duplicated the whole tree per character to annotate a few nodes. See
+[../decisions.md](../decisions.md) §1–§2 for the full rationale.
